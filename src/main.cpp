@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
     for (const auto& [map, entries] : options.entries)
     {
-        std::cout << map.filename().string() << ": [\n";
+        std::cout << map.string() << ": [\n";
 
         for (const auto& entry : entries)
         {

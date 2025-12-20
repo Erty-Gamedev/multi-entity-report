@@ -42,7 +42,7 @@ mer.exe --mod valve -c monster_gman -v argument
 Will result in
 
 ```txt
-c1a0.bsp: [
+Half-Life\valve\maps\c1a0.bsp: [
   monster_gman (index 54, targetname 'argumentg')
 ]
 ```

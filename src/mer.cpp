@@ -33,7 +33,7 @@ void printUsage()
 
         << style(italic) << "Example:\n" << style()
         << "> " << style(brightBlack) << "mer" << style() << " --mod valve -c monster_gman -v argument\n"
-        << "c1a0.bsp: [\n  monster_gman(index 55, targetname 'argumentg')\n]\n"
+        << "Half-Life/valve/maps/c1a0.bsp: [\n  monster_gman(index 55, targetname 'argumentg')\n]\n"
         << std::endl;
 }
 
@@ -46,7 +46,11 @@ void Options::findGlobsInMod(fs::path modPath)
     {
         fs::path entryPath = entry.path();
         if (toLowerCase(entryPath.extension().string()) == ".bsp")
-            globs.push_back(entryPath);
+        {
+            fs::path shortGlob = entryPath.parent_path().parent_path().parent_path().stem()
+                / entryPath.parent_path().parent_path().stem() / entryPath.parent_path().stem() / entryPath.filename();
+            globs.push_back(shortGlob);
+        }
     }
 }
 
@@ -122,11 +126,11 @@ void Options::checkMaps()
     for (const auto& glob : globs)
     {
 
-        std::cout << "\r\033[0K" << "Reading " << glob.filename();
+        std::cout << "\r\033[0K" << "Reading " << glob.string();
 
         try
         {
-            const Bsp reader{ glob };
+            const Bsp reader{ steamCommonDir / glob };
 
             for (int i = 0; i < reader.entities.size(); ++i)
             {
@@ -185,7 +189,7 @@ void Options::checkMaps()
         }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "\r\033[0K" << style(warning) << "WARNING: Could not read " << glob.filename() << ". Reason: " << e.what() << style() << std::endl;
+            std::cerr << "\r\033[0K" << style(warning) << "WARNING: Could not read " << glob.string() << ". Reason: " << e.what() << style() << std::endl;
             continue;
         }
     }
