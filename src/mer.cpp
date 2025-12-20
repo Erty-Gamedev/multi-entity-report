@@ -234,7 +234,7 @@ void Bsp::parse()
         if (lineBuffer.starts_with('{'))
         {
             Entity entity = readEntity();
-
+            entities.push_back(entity);
         }
     }
 }
