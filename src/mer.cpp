@@ -13,35 +13,27 @@ using namespace Styling;
 void printUsage()
 {
 #ifdef _WIN32
-    std::cout << "Usage: mer.exe maps_dir <search query> [options...]\n\n";
+    std::cout << "Usage: mer.exe <search query> [options...]\n\n";
 #else
-    std::cout << "Usage: mer maps_dir <search query> [options...]\n\n";
+    std::cout << "Usage: mer <search query> [options...]\n\n";
 #endif
-    std::cout << style(bold) << "REQUIRED ARGUMENTS\n" << style()
-        << " * MAPS DIR\t\t(path)\t"
-        << "path to the maps directory e.g. \".../steamapps/Half-Life/valve/maps\"\n\n"
-
+    std::cout
         << style(bold) << "SEARCH QUERY\n" << style()
-        << "  --classname\t-c\t\t"
-        << "classnames that must match\n"
-        << "  --key\t-k\t\t"
-        << "keys that must match\n"
-        << "  --value\t-v\t\t"
-        << "values that must match\n"
-        << "  --flags\t-f\t\t"
-        << "spawnflags that must match (ALL must match unless --flags_or is used)\n"
+        << "  --classname  -c      classnames that must match\n"
+        << "  --key        -k      keys that must match\n"
+        << "  --value      -v      values that must match\n"
+        << "  --flags      -f      spawnflags that must match (ALL must match unless --flags_or is used)\n"
 
         << style(bold) << "OPTIONS\n" << style()
-        << "  --flags_or\t-o\t\t"
-        << "change spawnflag check mode to ANY\n"
-        << "  --exact\t-e\t\t"
-        << "matches must be exact (whole term)\n"
-        << "  --case\t-s\t\t"
-        << "make matches case sensitive\n"
-        << "  --version\t\t\t"
-        << "print application version\n"
-        << "  --help\t-h\t\t"
-        << "print this message and exit"
+        << "  --flags_or   -o      change spawnflag check mode to ANY\n"
+        << "  --exact      -e      matches must be exact (whole term)\n"
+        << "  --case       -s      make matches case sensitive\n"
+        << "  --help       -h      print this message and exit\n"
+        << "  --version            print application version\n\n"
+
+        << style(italic) << "Example:\n" << style()
+        << "> " << style(brightBlack) << "mer" << style() << " --mod valve -c monster_gman -v argument\n"
+        << "c1a0.bsp: [\n  monster_gman(index 55, targetname 'argumentg')\n]\n"
         << std::endl;
 }
 
@@ -129,9 +121,8 @@ void Options::checkMaps()
 
     for (const auto& glob : globs)
     {
-#ifdef _DEBUG
+
         std::cout << "\r\033[0K" << "Reading " << glob.filename();
-#endif
 
         try
         {
@@ -198,7 +189,6 @@ void Options::checkMaps()
             continue;
         }
     }
-#ifdef _DEBUG
+
     std::cout << "\r\033[0K" << std::endl;
-#endif
 }
