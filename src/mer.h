@@ -41,5 +41,6 @@ private:
 	void findAllMods();
 	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 };
+extern Options g_options;
 
 void printUsage();

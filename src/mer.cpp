@@ -9,6 +9,8 @@
 namespace fs = std::filesystem;
 using namespace Styling;
 
+Options g_options{};
+
 
 void printUsage()
 {

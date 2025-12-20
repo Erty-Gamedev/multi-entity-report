@@ -14,10 +14,8 @@ int _CRT_glob = 0;
 using namespace Styling;
 
 
-static inline Options handleArgs(int argc, char* argv[])
+static inline void handleArgs(int argc, char* argv[])
 {
-    Options options;
-
     // Eager args
     for (int i = 1; i < argc; ++i)
     {
@@ -33,8 +31,8 @@ static inline Options handleArgs(int argc, char* argv[])
         }
     }
 
-    options.steamDir = getSteamDir();
-    options.steamCommonDir = options.steamDir / "steamapps" / "common";
+    g_options.steamDir = getSteamDir();
+    g_options.steamCommonDir = g_options.steamDir / "steamapps" / "common";
 
     for (int i = 1; i < argc; ++i)
     {
@@ -43,7 +41,7 @@ static inline Options handleArgs(int argc, char* argv[])
             ++i;
             if (i < argc)
             {
-                options.mod = unSteampipe(argv[i]);
+                g_options.mod = unSteampipe(argv[i]);
                 continue;
             }
 
@@ -56,7 +54,7 @@ static inline Options handleArgs(int argc, char* argv[])
             ++i;
             if (i < argc)
             {
-                options.classnames.emplace_back(argv[i]);
+                g_options.classnames.emplace_back(argv[i]);
                 continue;
             }
 
@@ -69,7 +67,7 @@ static inline Options handleArgs(int argc, char* argv[])
             ++i;
             if (i < argc)
             {
-                options.keys.emplace_back(argv[i]);
+                g_options.keys.emplace_back(argv[i]);
                 continue;
             }
 
@@ -82,7 +80,7 @@ static inline Options handleArgs(int argc, char* argv[])
             ++i;
             if (i < argc)
             {
-                options.values.emplace_back(argv[i]);
+                g_options.values.emplace_back(argv[i]);
                 continue;
             }
 
@@ -95,7 +93,7 @@ static inline Options handleArgs(int argc, char* argv[])
             ++i;
             if (i < argc)
             {
-                options.flags |= std::atoi(argv[i]);
+                g_options.flags |= std::atoi(argv[i]);
                 continue;
             }
 
@@ -106,67 +104,65 @@ static inline Options handleArgs(int argc, char* argv[])
 
         if (strcmp(argv[i], "--flags-or") == 0 || strcmp(argv[i], "-o") == 0)
         {
-            options.flagsOr = true;
+            g_options.flagsOr = true;
             continue;
         }
 
         if (strcmp(argv[i], "--exact") == 0 || strcmp(argv[i], "-e") == 0)
         {
-            options.exact = true;
+            g_options.exact = true;
             continue;
         }
 
         if (strcmp(argv[i], "--case") == 0 || strcmp(argv[i], "-s") == 0)
         {
-            options.caseSensitive = true;
+            g_options.caseSensitive = true;
             continue;
         }
     }
 
-    if (options.classnames.empty() && options.values.empty() && options.flags == 0)
+    if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
     {
         std::cout << style(info) << "Please specify a search query\n" << style() << std::endl;
         printUsage();
         exit(EXIT_SUCCESS);
     }
 
-    if (options.mod.empty())
-        options.globalSearch = true;
+    if (g_options.mod.empty())
+        g_options.globalSearch = true;
 
-    if (options.mod == "svencoop")
-        options.gamePath = options.steamCommonDir / "Sven Co-op";
+    if (g_options.mod == "svencoop")
+        g_options.gamePath = g_options.steamCommonDir / "Sven Co-op";
     else
-        options.gamePath = options.steamCommonDir / "Half-Life";
+        g_options.gamePath = g_options.steamCommonDir / "Half-Life";
 
-    if (!std::filesystem::is_directory(options.gamePath / options.mod))
+    if (!std::filesystem::is_directory(g_options.gamePath / g_options.mod))
     {
-        std::cerr << style(error) << "\"" << (options.gamePath / options.mod).string() << "\" is not a directory" << style() << std::endl;
+        std::cerr << style(error) << "\"" << (g_options.gamePath / g_options.mod).string() << "\" is not a directory" << style() << std::endl;
         exit(EXIT_FAILURE);
     }
 
 
-    if (!options.caseSensitive)
+    if (!g_options.caseSensitive)
     {
-        for (std::string& str : options.classnames)
+        for (std::string& str : g_options.classnames)
             str = toLowerCase(str);
-        for (std::string& str : options.keys)
+        for (std::string& str : g_options.keys)
             str = toLowerCase(str);
-        for (std::string& str : options.values)
+        for (std::string& str : g_options.values)
             str = toLowerCase(str);
     }
-
-    return options;
 }
 
 
 
 int main(int argc, char* argv[])
 {
-    Options options = handleArgs(argc, argv);
-    options.findGlobs();
-    options.checkMaps();
+    handleArgs(argc, argv);
+    g_options.findGlobs();
+    g_options.checkMaps();
 
-    for (const auto& [map, entries] : options.entries)
+    for (const auto& [map, entries] : g_options.entries)
     {
         std::cout << map.string() << ": [\n";
 
