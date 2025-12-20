@@ -123,6 +123,12 @@ static inline Options handleArgs(int argc, char* argv[])
         }
     }
 
+    if (options.classnames.empty() && options.values.empty() && options.flags == 0)
+    {
+        std::cout << style(info) << "Please specify a search query\n" << style() << std::endl;
+        printUsage();
+        exit(EXIT_SUCCESS);
+    }
 
     if (options.mod.empty())
         options.globalSearch = true;
