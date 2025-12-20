@@ -126,68 +126,9 @@ void Options::checkMaps()
 
     for (const auto& glob : globs)
     {
-
         std::cout << "\r\033[0K" << "Reading " << glob.string();
 
-        try
-        {
-            const Bsp reader{ steamCommonDir / glob };
-
-            for (int i = 0; i < reader.entities.size(); ++i)
-            {
-                const auto& entity = reader.entities[i];
-
-                if (!classnames.empty())
-                    if (!matchInList(entity.at("classname"), classnames))
-                        continue;
-
-                if (!keys.empty())
-                {
-                    bool skip = true;
-                    for (const auto& [key, value] : entity)
-                    {
-                        if (matchInList(key, keys))
-                        {
-                            skip = false;
-                            break;
-                        }
-                    }
-                    if (skip)
-                        continue;
-                }
-
-                if (!values.empty())
-                {
-                    bool skip = true;
-                    for (const auto& [key, value] : entity)
-                    {
-                        if (matchInList(value, values))
-                        {
-                            skip = false;
-                            break;
-                        }
-                    }
-                    if (skip)
-                        continue;
-                }
-
-                if (flags > 0)
-                {
-                    int spawnflags = 0;
-                    if (entity.contains("spawnflags"))
-                        spawnflags = std::stoi(entity.at("spawnflags"));
-                    int matches = spawnflags & flags;
-                    if (matches == 0 || (!flagsOr && matches != flags))
-                        continue;
-                }
-
-                if (!entries.contains(glob))
-                    entries.insert_or_assign(glob, std::vector<EntityEntry>{});
-
-                std::string targetname = entity.contains("targetname") ? entity.at("targetname") : "";
-                entries.at(glob).emplace_back(i, entity.at("classname"), targetname);
-            }
-        }
+        try { const Bsp reader{ glob }; }
         catch (const std::runtime_error& e)
         {
             std::cerr << "\r\033[0K" << style(warning) << "WARNING: Could not read " << glob.string() << ". Reason: " << e.what() << style() << std::endl;
@@ -204,11 +145,11 @@ using namespace BSPFormat;
 
 Bsp::Bsp(const std::filesystem::path& filepath) {
     m_filepath = filepath;
-    m_file.open(filepath, std::ios::binary);
+    m_file.open(g_options.steamCommonDir / filepath, std::ios::binary);
     if (!m_file.is_open() || !m_file.good())
     {
         m_file.close();
-        throw std::runtime_error("Could not open " + filepath.string());
+        throw std::runtime_error("Could not open " + (g_options.steamCommonDir / filepath).string());
     }
 
     m_file.read(reinterpret_cast<char*>(&m_header), sizeof(BspHeader));
@@ -229,12 +170,63 @@ void Bsp::parse()
     std::string lineBuffer;
     lineBuffer.reserve(1024);
 
+    int i = 0;
     while (std::getline(m_file, lineBuffer) && m_file.tellg() < lumpEnd)
     {
         if (lineBuffer.starts_with('{'))
         {
             Entity entity = readEntity();
-            entities.push_back(entity);
+            int index = i++;
+
+            if (!g_options.classnames.empty())
+                if (!g_options.matchInList(entity.at("classname"), g_options.classnames))
+                    continue;
+
+            if (!g_options.keys.empty())
+            {
+                bool skip = true;
+                for (const auto& [key, value] : entity)
+                {
+                    if (g_options.matchInList(key, g_options.keys))
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+                if (skip)
+                    continue;
+            }
+
+            if (!g_options.values.empty())
+            {
+                bool skip = true;
+                for (const auto& [key, value] : entity)
+                {
+                    if (g_options.matchInList(value, g_options.values))
+                    {
+                        skip = false;
+                        break;
+                    }
+                }
+                if (skip)
+                    continue;
+            }
+
+            if (g_options.flags > 0)
+            {
+                int spawnflags = 0;
+                if (entity.contains("spawnflags"))
+                    spawnflags = std::stoi(entity.at("spawnflags"));
+                int matches = spawnflags & g_options.flags;
+                if (matches == 0 || (!g_options.flagsOr && matches != g_options.flags))
+                    continue;
+            }
+
+            if (!g_options.entries.contains(m_filepath))
+                g_options.entries.insert_or_assign(m_filepath, std::vector<EntityEntry>{});
+
+            std::string targetname = entity.contains("targetname") ? entity.at("targetname") : "";
+            g_options.entries.at(m_filepath).emplace_back(index, entity.at("classname"), targetname);
         }
     }
 }

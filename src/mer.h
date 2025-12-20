@@ -37,11 +37,11 @@ struct Options
 
 	void findGlobs();
 	void checkMaps();
+	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 private:
 	void findGlobsInPipes(std::string baseMod);
 	void findGlobsInMod(std::filesystem::path modPath);
 	void findAllMods();
-	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 };
 extern Options g_options;
 
@@ -119,7 +119,6 @@ namespace BSPFormat
 	{
 	public:
 		std::filesystem::path m_filepath;
-		std::vector<Entity> entities;
 
 		Bsp(const std::filesystem::path& filepath);
 		~Bsp() { if (m_file.is_open()) m_file.close(); }
