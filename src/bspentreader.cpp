@@ -21,6 +21,7 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
 		throw std::runtime_error("Unexpected BSP version: " + std::to_string(m_header.version));
 
 	parse();
+	m_file.close();
 }
 
 void Bsp::parse()
@@ -28,32 +29,24 @@ void Bsp::parse()
 	BspLump& entLump = m_header.lumps[LumpIndex::ENTITIES];
 
 	m_file.seekg(entLump.offset, std::ios::beg);
-	std::string entData, lineBuffer;
-	entData.resize(entLump.length);
+	int lumpEnd = entLump.offset + entLump.length;
+	std::string lineBuffer;
 	lineBuffer.reserve(1024);
 
-	m_file.read(&entData[0], entLump.length);
-
-//#ifndef _WIN32
-//	replaceToken(entData, "\r", "");
-//#endif
-
-	std::stringstream entBuffer{ entData };
-
-	while (std::getline(entBuffer, lineBuffer))
+	while (std::getline(m_file, lineBuffer) && m_file.tellg() < lumpEnd)
 	{
 		if (lineBuffer.starts_with('{'))
-			readEntity(entBuffer);
+			readEntity();
 	}
 }
 
-void Bsp::readEntity(std::stringstream& entBuffer)
+void Bsp::readEntity()
 {
 	Entity entity;
 
 	std::string lineBuffer;
 	lineBuffer.reserve(512);
-	while (std::getline(entBuffer, lineBuffer))
+	while (std::getline(m_file, lineBuffer))
 	{
 		if (lineBuffer.starts_with('"'))
 		{

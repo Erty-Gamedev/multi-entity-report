@@ -88,6 +88,6 @@ namespace BSPFormat
 		BspHeader m_header;
 		std::ifstream m_file;
 		void parse();
-		void readEntity(std::stringstream& entBuffer);
+		void readEntity();
 	};
 }
