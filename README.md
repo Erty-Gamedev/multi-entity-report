@@ -29,6 +29,11 @@ One can change this by using `--exact` for whole term matches only.
 | -k, --key        | Keys that must match               |
 | -v, --value      | Values that must match             |
 | -f, --flags      | Spawnflags that must match (ALL must match unless --flags_or is used) |
+
+Various options can be used to influence the search:
+
+| Options          | Description                        |
+| ---------------- | ---------------------------------- |
 | -o, --flags_or   | Change spawnflag check mode to ANY |
 | -e, --exact      | Matches must be exact (whole term) |
 | -s, --case       | Make matches case sensitive        |
