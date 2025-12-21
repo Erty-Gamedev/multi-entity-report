@@ -167,16 +167,16 @@ void Bsp::parse()
 
     m_file.seekg(entLump.offset, std::ios::beg);
     int lumpEnd = entLump.offset + entLump.length;
-    std::string lineBuffer;
-    lineBuffer.reserve(1024);
 
+    char c;
     int i = 0;
-    while (std::getline(m_file, lineBuffer) && m_file.tellg() < lumpEnd)
+    while (m_file.get(c) && m_file.tellg() < lumpEnd)
     {
-        if (lineBuffer.starts_with('{'))
+        if (c == '{')
         {
-            Entity entity = readEntity();
+            bool test = m_filepath.filename() == "classic.bsp";
             int index = i++;
+            Entity entity = readEntity();
 
             if (!g_options.classnames.empty())
                 if (!g_options.matchInList(entity.at("classname"), g_options.classnames))
@@ -231,28 +231,78 @@ void Bsp::parse()
     }
 }
 
-Entity Bsp::readEntity()
+std::string Bsp::readToken(int maxLength)
 {
-    Entity entity;
+    std::string token;
+    token.reserve(maxLength);
 
-    std::string lineBuffer;
-    lineBuffer.reserve(512);
-    while (std::getline(m_file, lineBuffer))
+    char c;
+    int i = 0;
+    while (m_file.get(c))
     {
-        if (lineBuffer.starts_with('"'))
-        {
-            const auto& parts = splitString(lineBuffer, '"');
-            if (parts.size() != 4)
-                throw std::runtime_error("Invalid entity property: \"" + lineBuffer + "\"");
+        ++i;
 
-            entity.insert_or_assign(parts.at(1), parts.at(3));
+        if (c == '"')
+            break;
+
+        if (c == '\n')
+        {
+            token += "\\n";
             continue;
         }
 
-        if (lineBuffer.starts_with('}'))
-            break;
+        if (c == '\r')
+            continue;
 
-        throw std::runtime_error("Unexpected entity data: \"" + lineBuffer + "\"");
+        token.push_back(c);
+    }
+
+    return token;
+}
+
+Entity Bsp::readEntity()
+{
+    Entity entity;
+    size_t start = m_file.tellg();
+
+    char c;
+    while (m_file.get(c))
+    {
+        if (isspace(c)) continue;
+        if (c == '}') break;
+
+        if (c == '"')
+        {
+            std::string key = readToken(c_MaxKeyLength);
+
+            while (m_file.get(c))
+            {
+                if (isspace(c)) continue;
+
+                if (c == '"')
+                {
+                    std::string value = readToken(c_MaxValueLength);
+                    entity.insert_or_assign(key, value);
+
+                    // Skip comments at end of line (occurs in certain SC maps)
+                    if (m_file.peek() == '/')
+                        while (m_file.get(c))
+                            if (c == '\n')
+                                break;
+
+                    break;
+                }
+
+                // Print out the rest of the entity before the unexpected data was encountered
+                size_t offset = m_file.tellg();
+                std::vector<unsigned char> rawEntBuffer;
+                rawEntBuffer.resize(offset - start);
+                m_file.seekg(start);
+                m_file.read(reinterpret_cast<char*>(&rawEntBuffer[0]), offset - start);
+
+                throw std::runtime_error("Unexpected entity data near \"" + std::string(rawEntBuffer.begin(), rawEntBuffer.end()) + "\"");
+            }
+        }
     }
 
     return entity;

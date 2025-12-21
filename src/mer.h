@@ -126,6 +126,7 @@ namespace BSPFormat
 		BspHeader m_header;
 		std::ifstream m_file;
 		void parse();
+		std::string readToken(int maxLength = c_MaxKeyLength);
 		Entity readEntity();
 	};
 }
