@@ -1,0 +1,3 @@
+[submodule "vendor/logging"]
+	path = vendor/logging
+	url = git@github.com:Erty-Gamedev/logging.git
