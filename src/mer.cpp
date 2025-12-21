@@ -164,8 +164,24 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
 void Bsp::parse()
 {
     BspLump& entLump = m_header.lumps[LumpIndex::ENTITIES];
-
     m_file.seekg(entLump.offset, std::ios::beg);
+
+
+    // If the next byte isn't {, check if we need to flip planes and entities lumps, we might have a bshift BSP
+    while (isspace(m_file.peek()))  // Skip whitepaces
+        m_file.get();
+
+    if (m_file.peek() != '{')
+    {
+        entLump = m_header.lumps[LumpIndex::_PLANES];
+        m_file.seekg(entLump.offset, std::ios::beg);
+        while (isspace(m_file.peek()))  // Skip whitepaces
+            m_file.get();
+        if (m_file.peek() != '{')
+            throw std::runtime_error("Unexpected BSP format: " + m_filepath.string());
+    }
+
+
     int lumpEnd = entLump.offset + entLump.length;
 
     char c;
@@ -174,7 +190,6 @@ void Bsp::parse()
     {
         if (c == '{')
         {
-            bool test = m_filepath.filename() == "classic.bsp";
             int index = i++;
             Entity entity = readEntity();
 
