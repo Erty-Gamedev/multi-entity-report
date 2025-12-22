@@ -128,5 +128,6 @@ namespace BSPFormat
 		void parse();
 		std::string readToken(int maxLength = c_MaxKeyLength);
 		Entity readEntity();
+		bool readComment();
 	};
 }

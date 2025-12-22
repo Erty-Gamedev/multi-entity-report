@@ -149,16 +149,38 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
     if (!m_file.is_open() || !m_file.good())
     {
         m_file.close();
-        throw std::runtime_error("Could not open " + (g_options.steamCommonDir / filepath).string());
+        throw std::runtime_error("Could not open file for reading");
     }
 
     m_file.read(reinterpret_cast<char*>(&m_header), sizeof(BspHeader));
 
-    if (m_header.version != 30)
+    if (m_header.version != 30 && m_header.version != 29)
         throw std::runtime_error("Unexpected BSP version: " + std::to_string(m_header.version));
 
     parse();
     m_file.close();
+}
+
+bool Bsp::readComment()
+{
+    if (m_file.peek() != '/')
+        return false;
+
+    m_file.get();  // Consume first slash
+
+    if (m_file.peek() != '/')  // If next character is not slash, undo and return
+    {
+        m_file.unget();
+        return false;
+    }
+
+    char c;
+    while (m_file.get(c))
+    {
+        if (c == '\n')
+            break;
+    }
+    return true;
 }
 
 void Bsp::parse()
@@ -168,8 +190,11 @@ void Bsp::parse()
 
 
     // If the next byte isn't {, check if we need to flip planes and entities lumps, we might have a bshift BSP
+
     while (isspace(m_file.peek()))  // Skip whitepaces
         m_file.get();
+
+    while (readComment());  // I've found at least one example of BSP29 using comments as headers over each entity, skip these
 
     if (m_file.peek() != '{')
     {
@@ -178,7 +203,7 @@ void Bsp::parse()
         while (isspace(m_file.peek()))  // Skip whitepaces
             m_file.get();
         if (m_file.peek() != '{')
-            throw std::runtime_error("Unexpected BSP format: " + m_filepath.string());
+            throw std::runtime_error("Unexpected BSP format");
     }
 
 
