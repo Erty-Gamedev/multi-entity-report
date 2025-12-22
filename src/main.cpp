@@ -12,6 +12,8 @@ int _CRT_glob = 0;
 
 
 using namespace Styling;
+static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
+
 
 
 static inline void handleArgs(int argc, char* argv[])
@@ -34,21 +36,10 @@ static inline void handleArgs(int argc, char* argv[])
     g_options.steamDir = getSteamDir();
     g_options.steamCommonDir = g_options.steamDir / "steamapps" / "common";
 
+    int verbosity = 0;
+
     for (int i = 1; i < argc; ++i)
     {
-        if (strcmp(argv[i], "--mod") == 0 || strcmp(argv[i], "-m") == 0)
-        {
-            ++i;
-            if (i < argc)
-            {
-                g_options.mod = unSteampipe(argv[i]);
-                continue;
-            }
-
-            std::cerr << "Missing directory parameter for " << argv[i - 1] << " argument" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-
         if (strcmp(argv[i], "--classname") == 0 || strcmp(argv[i], "-c") == 0)
         {
             ++i;
@@ -119,7 +110,23 @@ static inline void handleArgs(int argc, char* argv[])
             g_options.caseSensitive = true;
             continue;
         }
+
+        if (strcmp(argv[i], "--verbose") == 0)
+        {
+            ++verbosity;
+            continue;
+        }
+
+        g_options.mods.emplace_back(unSteampipe(argv[i]));
     }
+
+    if (verbosity > 2)
+        logger.setLevel(Logging::LogLevel::LOG_DEBUG);
+    else if (verbosity > 1)
+        logger.setLevel(Logging::LogLevel::LOG_LOG);
+    else if (verbosity > 0)
+        logger.setLevel(Logging::LogLevel::LOG_WARNING);
+
 
     if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
     {
@@ -128,20 +135,8 @@ static inline void handleArgs(int argc, char* argv[])
         exit(EXIT_SUCCESS);
     }
 
-    if (g_options.mod.empty())
+    if (g_options.mods.empty())
         g_options.globalSearch = true;
-
-    if (g_options.mod == "svencoop")
-        g_options.gamePath = g_options.steamCommonDir / "Sven Co-op";
-    else
-        g_options.gamePath = g_options.steamCommonDir / "Half-Life";
-
-    if (!std::filesystem::is_directory(g_options.gamePath / g_options.mod))
-    {
-        std::cerr << style(error) << "\"" << (g_options.gamePath / g_options.mod).string() << "\" is not a directory" << style() << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
 
     if (!g_options.caseSensitive)
     {
@@ -158,6 +153,9 @@ static inline void handleArgs(int argc, char* argv[])
 
 int main(int argc, char* argv[])
 {
+    logger.setFileHandler(nullptr);
+    logger.setLevel(Logging::LogLevel::LOG_ERROR);
+
     handleArgs(argc, argv);
     g_options.findGlobs();
     g_options.checkMaps();

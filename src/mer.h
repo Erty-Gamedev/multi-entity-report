@@ -19,13 +19,13 @@ struct EntityEntry
 
 struct Options
 {
-	std::string mod = "";
 	std::filesystem::path gamePath;
 	std::filesystem::path steamDir;
 	std::filesystem::path steamCommonDir;
 	std::vector<std::string> classnames;
 	std::vector<std::string> keys;
 	std::vector<std::string> values;
+	std::vector<std::string> mods;
 	std::vector<std::filesystem::path> globs;
 	std::vector<std::filesystem::path> modDirs;
 	std::unordered_map<std::filesystem::path, std::vector<EntityEntry>> entries;
@@ -39,8 +39,8 @@ struct Options
 	void checkMaps();
 	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 private:
-	void findGlobsInPipes(std::string baseMod);
-	void findGlobsInMod(std::filesystem::path modPath);
+	void findGlobsInPipes(std::filesystem::path modDir);
+	void findGlobsInMod(std::filesystem::path modDir);
 	void findAllMods();
 };
 extern Options g_options;

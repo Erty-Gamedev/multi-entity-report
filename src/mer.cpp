@@ -7,6 +7,7 @@
 
 namespace fs = std::filesystem;
 using namespace Styling;
+static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
 Options g_options{};
 
@@ -14,11 +15,14 @@ Options g_options{};
 void printUsage()
 {
 #ifdef _WIN32
-    std::cout << "Usage: mer.exe <search query> [options...]\n\n";
+    std::cout << "Usage: mer.exe [mods...] <search query> [options...]\n\n";
 #else
-    std::cout << "Usage: mer <search query> [options...]\n\n";
+    std::cout << "Usage: mer [mods...] <search query> [options...]\n\n";
 #endif
     std::cout
+        << style(bold) << "ARGUMENTS\n" << style()
+        << "  mods                 filter search to these mods only, global search otherwise (e.g. cstrike)\n"
+
         << style(bold) << "SEARCH QUERY\n" << style()
         << "  --classname  -c      classnames that must match\n"
         << "  --key        -k      keys that must match\n"
@@ -30,20 +34,21 @@ void printUsage()
         << "  --exact      -e      matches must be exact (whole term)\n"
         << "  --case       -s      make matches case sensitive\n"
         << "  --help       -h      print this message and exit\n"
-        << "  --version            print application version\n\n"
+        << "  --version            print application version and exit\n"
+        << "  --verbose            enable verbose logging\n\n"
 
         << style(italic) << "Example:\n" << style()
-        << "> " << style(brightBlack) << "mer" << style() << " --mod valve -c monster_gman -v argument\n"
+        << "> " << style(brightBlack) << "mer" << style() << " valve -c monster_gman -v argument\n"
         << "Half-Life/valve/maps/c1a0.bsp: [\n  monster_gman(index 55, targetname 'argumentg')\n]\n"
         << std::endl;
 }
 
-void Options::findGlobsInMod(fs::path modPath)
+void Options::findGlobsInMod(fs::path modDir)
 {
-    if (!fs::is_directory(modPath / "maps"))
+    if (!fs::is_directory(modDir / "maps"))
         return;
 
-    for (const auto& entry : fs::directory_iterator(modPath / "maps"))
+    for (const auto& entry : fs::directory_iterator(modDir / "maps"))
     {
         fs::path entryPath = entry.path();
         if (toLowerCase(entryPath.extension().string()) == ".bsp")
@@ -55,17 +60,19 @@ void Options::findGlobsInMod(fs::path modPath)
     }
 }
 
-void Options::findGlobsInPipes(std::string baseMod)
+void Options::findGlobsInPipes(fs::path modDir)
 {
-    fs::path modPath = gamePath / baseMod;
-    if (fs::is_directory(modPath))
-        findGlobsInMod(modPath);
+    std::string baseMod = modDir.stem().string();
+    gamePath = modDir.parent_path();
+
+    if (fs::is_directory(modDir))
+        findGlobsInMod(modDir);
 
     for (const auto& pipe : c_SteamPipes)
     {
-        modPath = gamePath / (baseMod + pipe);
-        if (fs::is_directory(modPath))
-            findGlobsInMod(modPath);
+        modDir = gamePath / (baseMod + pipe);
+        if (fs::is_directory(modDir))
+            findGlobsInMod(modDir);
     }
 }
 
@@ -106,18 +113,28 @@ bool Options::matchInList(std::string needle, const std::vector<std::string>& ha
 void Options::findGlobs()
 {
     if (globalSearch)
-    {
         findAllMods();
-        for (const auto& modDir : modDirs)
+    else
+    {
+        for (const auto& mod : mods)
         {
-            gamePath = modDir.parent_path();
-            mod = modDir.stem().string();
-            findGlobsInPipes(mod);
+            if (mod == "svencoop")
+                gamePath = g_options.steamCommonDir / "Sven Co-op";
+            else
+                gamePath = g_options.steamCommonDir / "Half-Life";
+
+            fs::path modDir = gamePath / mod;
+            if (!std::filesystem::is_directory(modDir))
+            {
+                logger.warning("\"" + modDir.string() + "\" is not a directory");
+                continue;
+            }
+            modDirs.push_back(modDir);
         }
-        return;
     }
 
-    findGlobsInPipes(unSteampipe(mod));
+    for (const auto& modDir : modDirs)
+        findGlobsInPipes(modDir);
 }
 
 void Options::checkMaps()
