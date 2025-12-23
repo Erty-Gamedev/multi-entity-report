@@ -148,7 +148,10 @@ void Options::checkMaps()
         try { const Bsp reader{ glob }; }
         catch (const std::runtime_error& e)
         {
-            std::cerr << "\r\033[0K" << style(warning) << "WARNING: Could not read " << glob.string() << ". Reason: " << e.what() << style() << std::endl;
+            if (logger.getLevel() > Logging::LogLevel::LOG_WARNING)
+                continue;
+            std::cerr << "\r\033[0K";
+            logger.warning("Could not read " + glob.string() + ". Reason: " + e.what());
             continue;
         }
     }
@@ -172,7 +175,7 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
     m_file.read(reinterpret_cast<char*>(&m_header), sizeof(BspHeader));
 
     if (m_header.version != 30 && m_header.version != 29)
-        throw std::runtime_error("Unexpected BSP version: " + std::to_string(m_header.version));
+        throw std::runtime_error("Unexpected BSP version: " + style(info) + std::to_string(m_header.version) + style());
 
     parse();
     m_file.close();
@@ -357,7 +360,7 @@ Entity Bsp::readEntity()
                 m_file.seekg(start);
                 m_file.read(reinterpret_cast<char*>(&rawEntBuffer[0]), offset - start);
 
-                throw std::runtime_error("Unexpected entity data near \"" + std::string(rawEntBuffer.begin(), rawEntBuffer.end()) + "\"");
+                throw std::runtime_error("Unexpected entity data near " + style(info|dim) + std::string(rawEntBuffer.begin(), rawEntBuffer.end()) + style());
             }
         }
     }
