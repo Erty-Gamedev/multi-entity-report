@@ -106,7 +106,7 @@ std::filesystem::path getSteamDir()
 
     if (std::filesystem::is_directory(c_defaultSteamDir))
     {
-        std::cout << "Is " << c_defaultSteamDir << " your Steam directory ? (Y / n) ";
+        std::cout << "Is " << c_defaultSteamDir << " your Steam directory? (Y/n) ";
         if (confirm_dialogue(true))
         {
             g_configs.insert_or_assign("steamdir", c_defaultSteamDir);

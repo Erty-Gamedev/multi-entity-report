@@ -15,11 +15,13 @@ Options g_options{};
 void printUsage()
 {
 #ifdef _WIN32
-    std::cout << "Usage: mer.exe [mods...] <search query> [options...]\n\n";
+    std::cout << "Usage: mer.exe [mods...] <search query> [options...]\n";
 #else
-    std::cout << "Usage: mer [mods...] <search query> [options...]\n\n";
+    std::cout << "Usage: mer [mods...] <search query> [options...]\n";
 #endif
     std::cout
+        << style(dim|italic) << "Run without any arguments to start interactive mode\n\n"
+
         << style(bold) << "ARGUMENTS\n" << style()
         << "  mods                 filter search to these mods only, global search otherwise (e.g. cstrike)\n"
 

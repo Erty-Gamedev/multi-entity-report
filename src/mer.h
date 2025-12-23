@@ -34,6 +34,7 @@ struct Options
 	bool flagsOr = false;
 	bool exact = false;
 	bool caseSensitive = false;
+	bool interactiveMode = false;
 
 	void findGlobs();
 	void checkMaps();

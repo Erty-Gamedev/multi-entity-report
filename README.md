@@ -63,3 +63,9 @@ which means `-f 1 -f 4` is equivalent to `-f 5`.
 
 Using the `--flags_or` argument changes the spawnflags check to ANY mode.
 This means only one of the specified spawnflags must be enabled to match.
+
+## Interactive mode
+
+You may also run the applications without any arguments, in which case it will start
+interactive mode. The application will then ask you to provide filters for each
+type of search query. Multiple filters can be entered by separating them with spaces.

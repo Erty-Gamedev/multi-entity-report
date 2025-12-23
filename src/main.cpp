@@ -49,7 +49,7 @@ static inline void handleArgs(int argc, char* argv[])
                 continue;
             }
 
-            std::cerr << "Missing parameter for " << argv[i - 1] << " argument" << std::endl;
+            logger.error("Missing parameter for %s argument", argv[i - 1]);
             exit(EXIT_FAILURE);
         }
 
@@ -62,7 +62,7 @@ static inline void handleArgs(int argc, char* argv[])
                 continue;
             }
 
-            std::cerr << "Missing parameter for " << argv[i - 1] << " argument" << std::endl;
+            logger.error("Missing parameter for %s argument", argv[i - 1]);
             exit(EXIT_FAILURE);
         }
 
@@ -75,7 +75,7 @@ static inline void handleArgs(int argc, char* argv[])
                 continue;
             }
 
-            std::cerr << "Missing parameter for " << argv[i - 1] << " argument" << std::endl;
+            logger.error("Missing parameter for %s argument", argv[i - 1]);
             exit(EXIT_FAILURE);
         }
 
@@ -88,7 +88,7 @@ static inline void handleArgs(int argc, char* argv[])
                 continue;
             }
 
-            std::cerr << "Missing parameter for " << argv[i - 1] << " argument" << std::endl;
+            logger.error("Missing parameter for %s argument", argv[i - 1]);
             exit(EXIT_FAILURE);
         }
 
@@ -130,9 +130,70 @@ static inline void handleArgs(int argc, char* argv[])
 
     if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
     {
-        std::cout << style(info) << "Please specify a search query\n" << style() << std::endl;
-        printUsage();
-        exit(EXIT_SUCCESS);
+        g_options.interactiveMode = true;
+        std::string buffer;
+
+        std::cout << style(info) << "Specify mods to narrow search by (leave empty for global search): " << style();
+        std::getline(std::cin, buffer);
+        if (buffer.empty())
+            g_options.globalSearch = true;
+        else
+        {
+            const std::vector<std::string>& parts = splitString(buffer, ' ');
+            for (const auto& part : parts)
+                g_options.mods.push_back(unSteampipe(part));
+        }
+
+        std::cout << style(info) << "Enter classnames to filter by: " << style();
+        std::getline(std::cin, buffer);
+        if (!buffer.empty())
+        {
+            const std::vector<std::string>& parts = splitString(buffer, ' ');
+            for (const auto& part : parts)
+                g_options.classnames.emplace_back(part);
+        }
+
+        std::cout << style(info) << "Enter keys to filter by: " << style();
+        std::getline(std::cin, buffer);
+        if (!buffer.empty())
+        {
+            const std::vector<std::string>& parts = splitString(buffer, ' ');
+            for (const auto& part : parts)
+                g_options.keys.emplace_back(part);
+        }
+
+        std::cout << style(info) << "Enter values to filter by: " << style();
+        std::getline(std::cin, buffer);
+        if (!buffer.empty())
+        {
+            const std::vector<std::string>& parts = splitString(buffer, ' ');
+            for (const auto& part : parts)
+                g_options.values.emplace_back(part);
+        }
+
+        std::cout << style(info) << "Only exact matches? (y/N): " << style();
+        if (confirm_dialogue(false))
+            g_options.exact = true;
+
+        std::cout << style(info) << "Enter flags to filter by: " << style();
+        std::getline(std::cin, buffer);
+        if (!buffer.empty())
+        {
+            const std::vector<std::string>& parts = splitString(buffer, ' ');
+            for (const auto& part : parts)
+                g_options.flags |= std::stoi(part);
+        }
+
+        if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
+        {
+            std::cout << style(warning) << "Please specify a search query\n" << style() << std::endl;
+            printUsage();
+            exit(EXIT_SUCCESS);
+        }
+
+        std::cout << style(info) << "Match ANY flag? (y/N): " << style();
+        if (confirm_dialogue(false))
+            g_options.flagsOr = true;
     }
 
     if (g_options.mods.empty())
@@ -173,5 +234,11 @@ int main(int argc, char* argv[])
         }
 
         std::cout << "]\n";
+    }
+
+    if (g_options.interactiveMode)
+    {
+        std::cout << "\nPress any key to close this window...";
+        confirm_dialogue();
     }
 }
