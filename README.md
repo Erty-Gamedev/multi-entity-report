@@ -10,17 +10,12 @@ index in the entity lump, and targetname if it has one.
 
 The first time you call the application it will ask you for your Steam directory.<br>
 Call the application through a commandline interface with one or more arguments
-defining the search query. You may use the `--mod <mod_name>` option to narrow the
-search to within a specific mod folder, e.g. *cstrike* or *valve*.
+defining the search query. You may optionally provide mod names to narrow the search
+to those mods only, e.g. `cstrike` or `valve`.
 
 The following arguments are available for building a search query.
 Using them more than once builds a list of possible terms to match against,
 i.e. `-k targetname -v my_entity1 -v my_entity2` will match any entity whose targetname is *either* my_entity1 or my_entity2.
-
-By default a partial match is used for classnames, keys and values,
-only the beginning of each field need to match the query
-(meaning the classname query "monster_alien" will match "monster_alien_controller", "monster_alien_grunt" and "monster_alien_slave").<br>
-One can change this by using `--exact` for whole term matches only.
 
 | Argument         | Description                        |
 | ---------------- | ---------------------------------- |
@@ -29,6 +24,11 @@ One can change this by using `--exact` for whole term matches only.
 | -k, --key        | Keys that must match               |
 | -v, --value      | Values that must match             |
 | -f, --flags      | Spawnflags that must match (ALL must match unless --flags_or is used) |
+
+By default a partial match is used for classnames, keys and values,
+only the beginning of each field need to match the query
+(meaning the classname query "monster_alien" will match "monster_alien_controller", "monster_alien_grunt" and "monster_alien_slave").<br>
+One can change this by using `--exact` for whole term matches only.
 
 Various options can be used to influence the search:
 
@@ -41,7 +41,7 @@ Various options can be used to influence the search:
 ### Example
 
 ```cli
-mer.exe --mod valve -c monster_gman -v argument
+mer.exe valve -c monster_gman -v argument
 ```
 
 Will result in
