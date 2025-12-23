@@ -188,6 +188,8 @@ static inline void handleArgs(int argc, char* argv[])
         {
             std::cout << style(warning) << "Please specify a search query\n" << style() << std::endl;
             printUsage();
+            std::cout << "\nPress any key to close this window...";
+            confirm_dialogue();
             exit(EXIT_SUCCESS);
         }
 

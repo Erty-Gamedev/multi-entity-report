@@ -20,7 +20,7 @@ void printUsage()
     std::cout << "Usage: mer [mods...] <search query> [options...]\n";
 #endif
     std::cout
-        << style(dim|italic) << "Run without any arguments to start interactive mode\n\n"
+        << style(brightBlack |italic) << "Run without any arguments to start interactive mode\n\n"
 
         << style(bold) << "ARGUMENTS\n" << style()
         << "  mods                 filter search to these mods only, global search otherwise (e.g. cstrike)\n"
