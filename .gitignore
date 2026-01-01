@@ -50,6 +50,7 @@ bld/
 # IDE
 .vscode/
 .vs/
+.idea/
 *.user
 *.vcxproj
 *.vcxproj.filters
