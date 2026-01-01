@@ -6,6 +6,13 @@
 #include "logging.h"
 #include "utils.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#include <pwd.h>
+#endif
+
 using namespace Styling;
 
 
@@ -91,7 +98,14 @@ static inline bool saveConfigFile()
 }
 
 
-static inline const char* c_defaultSteamDir = "C:/Program Files (x86)/Steam";
+#ifdef _WIN32
+static inline const std::filesystem::path c_defaultSteamDir = "C:/Program Files (x86)/Steam";
+#else
+struct passwd *pw = getpwuid(getuid());
+static inline std::filesystem::path userHome{ pw->pw_dir };
+static inline const std::filesystem::path c_defaultSteamDir = userHome / ".local/share/Steam";
+static inline const std::filesystem::path c_steamDirSnap = userHome / "snap/steam/common/.local/share/Steam";
+#endif
 std::filesystem::path getSteamDir()
 {
     if (g_configs.contains("steamdir"))
@@ -111,6 +125,18 @@ std::filesystem::path getSteamDir()
             return c_defaultSteamDir;
         }
     }
+#ifndef _WIN32
+    if (std::filesystem::is_directory(c_steamDirSnap))
+    {
+        std::cout << "Is " << c_steamDirSnap << " your Steam directory? (Y/n) ";
+        if (confirm_dialogue(true))
+        {
+            g_configs.insert_or_assign("steamdir", c_steamDirSnap);
+            saveConfigFile();
+            return c_steamDirSnap;
+        }
+    }
+#endif
 
     std::string buffer;
     for (int i = 0; i < 3; ++i)
