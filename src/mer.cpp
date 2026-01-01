@@ -45,15 +45,14 @@ void printUsage()
         << std::endl;
 }
 
-void Options::findGlobsInMod(fs::path modDir)
+void Options::findGlobsInMod(const fs::path& modDir)
 {
     if (!fs::is_directory(modDir / "maps"))
         return;
 
     for (const auto& entry : fs::directory_iterator(modDir / "maps"))
     {
-        fs::path entryPath = entry.path();
-        if (toLowerCase(entryPath.extension().string()) == ".bsp")
+        if (const fs::path& entryPath = entry.path(); toLowerCase(entryPath.extension().string()) == ".bsp")
         {
             fs::path shortGlob = entryPath.parent_path().parent_path().parent_path().stem()
                 / entryPath.parent_path().parent_path().stem() / entryPath.parent_path().stem() / entryPath.filename();
@@ -103,7 +102,7 @@ bool Options::matchInList(std::string needle, const std::vector<std::string>& ha
     if (exact)
         return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
 
-    for (std::string query : haystack)
+    for (const std::string& query : haystack)
     {
         if (needle.starts_with(query))
             return true;
@@ -216,11 +215,12 @@ void Bsp::parse()
     while (isspace(m_file.peek()))  // Skip whitepaces
         m_file.get();
 
-    while (readComment());  // I've found at least one example of BSP29 using comments as headers over each entity, skip these
+    // I've found at least one example of BSP29 using comments as headers over each entity, skip these
+    while (readComment()) {}
 
     if (m_file.peek() != '{')
     {
-        entLump = m_header.lumps[LumpIndex::_PLANES];
+        entLump = m_header.lumps[LumpIndex::PLANES];
         m_file.seekg(entLump.offset, std::ios::beg);
         while (isspace(m_file.peek()))  // Skip whitepaces
             m_file.get();
@@ -229,7 +229,7 @@ void Bsp::parse()
     }
 
 
-    int lumpEnd = entLump.offset + entLump.length;
+    const int lumpEnd = entLump.offset + entLump.length;
 
     char c;
     int i = 0;
@@ -276,11 +276,11 @@ void Bsp::parse()
 
             if (g_options.flags > 0)
             {
-                int spawnflags = 0;
+                unsigned int spawnflags = 0;
                 if (entity.contains("spawnflags"))
                     spawnflags = std::stoi(entity.at("spawnflags"));
-                int matches = spawnflags & g_options.flags;
-                if (matches == 0 || (!g_options.flagsOr && matches != g_options.flags))
+                if (const unsigned int matches = spawnflags & g_options.flags; matches == 0
+                    || (!g_options.flagsOr && matches != g_options.flags))
                     continue;
             }
 
@@ -325,7 +325,7 @@ std::string Bsp::readToken(int maxLength)
 Entity Bsp::readEntity()
 {
     Entity entity;
-    size_t start = m_file.tellg();
+    const std::streamoff start = m_file.tellg();
 
     char c;
     while (m_file.get(c))
@@ -356,7 +356,7 @@ Entity Bsp::readEntity()
                 }
 
                 // Print out the rest of the entity before the unexpected data was encountered
-                size_t offset = m_file.tellg();
+                const std::streamoff offset = m_file.tellg();
                 std::vector<unsigned char> rawEntBuffer;
                 rawEntBuffer.resize(offset - start);
                 m_file.seekg(start);

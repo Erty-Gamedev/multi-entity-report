@@ -1,12 +1,9 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <sstream>
 #include <fstream>
-#include <cstdint>
 #include <unordered_map>
 #include <filesystem>
-#include "utils.h"
 
 
 struct EntityEntry
@@ -41,7 +38,7 @@ struct Options
 	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
-	void findGlobsInMod(std::filesystem::path modDir);
+	void findGlobsInMod(const std::filesystem::path& modDir);
 	void findAllMods();
 };
 extern Options g_options;
@@ -83,7 +80,7 @@ namespace BSPFormat
 	enum LumpIndex
 	{
 		ENTITIES = 0,
-		_PLANES = 1,
+		PLANES = 1,
 		TEXTURES = 2,
 		VERTICES = 3,
 		VISIBILITY = 4,
@@ -124,7 +121,7 @@ namespace BSPFormat
 		Bsp(const std::filesystem::path& filepath);
 		~Bsp() { if (m_file.is_open()) m_file.close(); }
 	private:
-		BspHeader m_header;
+		BspHeader m_header{};
 		std::ifstream m_file;
 		void parse();
 		std::string readToken(int maxLength = c_MaxKeyLength);

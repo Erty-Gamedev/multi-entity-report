@@ -10,13 +10,11 @@ int _CRT_glob = 0;
 #define MER_NAME_VERSION "Multi Entity Report v0.0.0"
 #endif
 
-
 using namespace Styling;
 static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
 
-
-static inline void handleArgs(int argc, char* argv[])
+static inline void handleArgs(const int argc, char* argv[])
 {
     // Eager args
     for (int i = 1; i < argc; ++i)
@@ -34,7 +32,7 @@ static inline void handleArgs(int argc, char* argv[])
     }
 
     g_options.steamDir = getSteamDir();
-    g_options.steamCommonDir = g_options.steamDir / "steamapps" / "common";
+    g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
 
     int verbosity = 0;
 
@@ -214,7 +212,7 @@ static inline void handleArgs(int argc, char* argv[])
 
 
 
-int main(int argc, char* argv[])
+int main(const int argc, char* argv[])
 {
     logger.setFileHandler(nullptr);
     logger.setLevel(Logging::LogLevel::LOG_ERROR);
@@ -227,11 +225,11 @@ int main(int argc, char* argv[])
     {
         std::cout << map.string() << ": [\n";
 
-        for (const auto& entry : entries)
+        for (const auto&[index, classname, targetname] : entries)
         {
-            std::cout << "  " << entry.classname << " (index " << entry.index;
-            if (!entry.targetname.empty())
-                std::cout << ", targetname '" << entry.targetname << "'";
+            std::cout << "  " << classname << " (index " << index;
+            if (!targetname.empty())
+                std::cout << ", targetname '" << targetname << "'";
             std::cout << ")\n";
         }
 

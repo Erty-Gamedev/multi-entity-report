@@ -9,10 +9,9 @@
 using namespace Styling;
 
 
-static inline std::filesystem::path _getExeDir()
+static std::filesystem::path getExeDir()
 {
 #ifdef _WIN32
-#include <Windows.h>
     std::vector<wchar_t> pathBuffer;
     DWORD copied = 0;
     do {
@@ -23,12 +22,10 @@ static inline std::filesystem::path _getExeDir()
     std::wstring exeDir(pathBuffer.begin(), pathBuffer.end());
     return std::filesystem::path{ exeDir }.parent_path();
 #else
-#include <limits.h>
-#include <unistd.h>
     return std::filesystem::canonical("/proc/self/exe").parent_path();
 #endif
 }
-static inline const std::filesystem::path c_exedir = _getExeDir();
+static inline const std::filesystem::path c_exedir = getExeDir();
 static inline const std::filesystem::path configFilePath = c_exedir / "mer.conf";
 
 
