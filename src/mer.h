@@ -79,22 +79,22 @@ namespace BSPFormat
 
 	enum LumpIndex
 	{
-		ENTITIES = 0,
-		PLANES = 1,
-		TEXTURES = 2,
-		VERTICES = 3,
-		VISIBILITY = 4,
-		NODES = 5,
-		TEXINFO = 6,
-		FACES = 7,
-		LIGHTING = 8,
-		CLIPNODES = 9,
-		LEAVES = 10,
-		MARKSURFACES = 11,
-		EDGES = 12,
-		SURFEDGES = 13,
-		MODELS = 14,
-		HEADERLUMPS = 15
+		Entities = 0,
+		Planes = 1,
+		Textures = 2,
+		Vertices = 3,
+		Visibility = 4,
+		Nodes = 5,
+		Texinfo = 6,
+		Faces = 7,
+		Lighting = 8,
+		Clipnodes = 9,
+		Leaves = 10,
+		Marksurfaces = 11,
+		Edges = 12,
+		Surfedges = 13,
+		Models = 14,
+		Headerlumps = 15
 	};
 
 #pragma pack(push, 1)
@@ -107,7 +107,7 @@ namespace BSPFormat
 	struct BspHeader
 	{
 		std::int32_t version;
-		BspLump lumps[LumpIndex::HEADERLUMPS];
+		BspLump lumps[LumpIndex::Headerlumps];
 	};
 #pragma pack(pop)
 

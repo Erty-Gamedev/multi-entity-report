@@ -206,7 +206,7 @@ bool Bsp::readComment()
 
 void Bsp::parse()
 {
-    BspLump& entLump = m_header.lumps[LumpIndex::ENTITIES];
+    BspLump& entLump = m_header.lumps[LumpIndex::Entities];
     m_file.seekg(entLump.offset, std::ios::beg);
 
 
@@ -220,7 +220,7 @@ void Bsp::parse()
 
     if (m_file.peek() != '{')
     {
-        entLump = m_header.lumps[LumpIndex::PLANES];
+        entLump = m_header.lumps[LumpIndex::Planes];
         m_file.seekg(entLump.offset, std::ios::beg);
         while (isspace(m_file.peek()))  // Skip whitepaces
             m_file.get();
