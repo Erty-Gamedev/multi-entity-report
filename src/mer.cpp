@@ -1,3 +1,4 @@
+#include <cmath>
 #include <vector>
 #include <filesystem>
 #include "logging.h"
@@ -79,8 +80,8 @@ void Options::findGlobsInPipes(fs::path modDir)
 
 void Options::findAllMods()
 {
-    if (fs::is_directory(steamCommonDir / "Sven Co-op" / "svencoop"))
-        modDirs.emplace_back(steamCommonDir / "Sven Co-op" / "svencoop");
+    if (fs::is_directory(steamCommonDir / "Sven Co-op/svencoop"))
+        modDirs.emplace_back(steamCommonDir / "Sven Co-op/svencoop");
 
     if (!fs::is_directory(steamCommonDir / "Half-Life"))
         return;
@@ -107,6 +108,65 @@ bool Options::matchInList(std::string needle, const std::vector<std::string>& ha
         if (needle.starts_with(query))
             return true;
     }
+
+    return false;
+}
+
+bool Options::matchValueInList(std::string needle, const std::vector<std::string>& haystack) const
+{
+    if (!caseSensitive)
+        needle = toLowerCase(needle);
+
+    char* err;
+    double needleNum = std::strtod(needle.c_str(), &err);
+
+    if (*err)
+    {
+        if (exact)
+            return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+
+        for (const std::string& query : haystack)
+            if (needle.starts_with(query))
+                return true;
+
+        return false;
+    }
+
+    // If we get here, needle is a number. Check if we should do a numeric comparison
+    for (const std::string& query : haystack)
+    {
+        if (query.starts_with(">="))
+            return needleNum >= std::stod(query.substr(2));
+        if (query.starts_with("<="))
+            return needleNum <= std::stod(query.substr(2));
+        if (query.starts_with(">"))
+            return needleNum > std::stod(query.substr(1));
+        if (query.starts_with("<"))
+            return needleNum < std::stod(query.substr(1));
+        if (query.starts_with("="))
+            return fabs(needleNum - std::stod(query.substr(1))) < 0.01;
+
+        if (needle.starts_with(query))
+            return true;
+    }
+
+    return false;
+}
+
+bool Options::matchKeyFilters(const Entity& entity)
+{
+    for (const auto& [key, value] : entity)
+        if (g_options.matchInList(key, g_options.keys))
+            return true;
+
+    return false;
+}
+
+bool Options::matchValueFilters(const Entity& entity)
+{
+    for (const auto& [key, value] : entity)
+        if (g_options.matchValueInList(value, g_options.values))
+            return true;
 
     return false;
 }
@@ -209,15 +269,14 @@ void Bsp::parse()
     BspLump& entLump = m_header.lumps[LumpIndex::Entities];
     m_file.seekg(entLump.offset, std::ios::beg);
 
-
-    // If the next byte isn't {, check if we need to flip planes and entities lumps, we might have a bshift BSP
-
     while (isspace(m_file.peek()))  // Skip whitepaces
         m_file.get();
 
     // I've found at least one example of BSP29 using comments as headers over each entity, skip these
     while (readComment()) {}
 
+
+    // If the next byte isn't {, check if we need to flip planes and entities lumps, we might have a bshift BSP
     if (m_file.peek() != '{')
     {
         entLump = m_header.lumps[LumpIndex::Planes];
@@ -240,39 +299,18 @@ void Bsp::parse()
             int index = i++;
             Entity entity = readEntity();
 
+            if (!entity.contains("classname"))
+                continue;  // Just in case. Entities should always have a classname, but you never know
+
             if (!g_options.classnames.empty())
                 if (!g_options.matchInList(entity.at("classname"), g_options.classnames))
                     continue;
 
-            if (!g_options.keys.empty())
-            {
-                bool skip = true;
-                for (const auto& [key, value] : entity)
-                {
-                    if (g_options.matchInList(key, g_options.keys))
-                    {
-                        skip = false;
-                        break;
-                    }
-                }
-                if (skip)
-                    continue;
-            }
+            if (!g_options.keys.empty() && !g_options.matchKeyFilters(entity))
+                continue;
 
-            if (!g_options.values.empty())
-            {
-                bool skip = true;
-                for (const auto& [key, value] : entity)
-                {
-                    if (g_options.matchInList(value, g_options.values))
-                    {
-                        skip = false;
-                        break;
-                    }
-                }
-                if (skip)
-                    continue;
-            }
+            if (!g_options.values.empty() && !g_options.matchValueFilters(entity))
+                continue;
 
             if (g_options.flags > 0)
             {

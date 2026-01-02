@@ -13,6 +13,8 @@ struct EntityEntry
 	std::string targetname;
 };
 
+using Entity = std::unordered_map<std::string, std::string>;
+
 
 struct Options
 {
@@ -36,6 +38,9 @@ struct Options
 	void findGlobs();
 	void checkMaps();
 	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
+	bool matchValueInList(std::string needle, const std::vector<std::string>& haystack) const;
+	bool matchKeyFilters(const Entity& entity);
+	bool matchValueFilters(const Entity& entity);
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
 	void findGlobsInMod(const std::filesystem::path& modDir);
@@ -111,7 +116,6 @@ namespace BSPFormat
 	};
 #pragma pack(pop)
 
-	using Entity = std::unordered_map<std::string, std::string>;
 
 	class Bsp
 	{
