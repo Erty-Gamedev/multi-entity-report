@@ -120,7 +120,7 @@ std::filesystem::path getSteamDir()
         std::cout << "Is " << c_defaultSteamDir << " your Steam directory? (Y/n) ";
         if (confirm_dialogue(true))
         {
-            g_configs.insert_or_assign("steamdir", c_defaultSteamDir);
+            g_configs.insert_or_assign("steamdir", c_defaultSteamDir.string());
             saveConfigFile();
             return c_defaultSteamDir;
         }
@@ -131,7 +131,7 @@ std::filesystem::path getSteamDir()
         std::cout << "Is " << c_steamDirSnap << " your Steam directory? (Y/n) ";
         if (confirm_dialogue(true))
         {
-            g_configs.insert_or_assign("steamdir", c_steamDirSnap);
+            g_configs.insert_or_assign("steamdir", c_steamDirSnap.string());
             saveConfigFile();
             return c_steamDirSnap;
         }
