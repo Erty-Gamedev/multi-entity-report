@@ -1,6 +1,8 @@
 #include <cmath>
 #include <vector>
 #include <filesystem>
+#include <algorithm>
+#include <ranges>
 #include "logging.h"
 #include "mer.h"
 #include "utils.h"
@@ -101,15 +103,11 @@ bool Options::matchInList(std::string needle, const std::vector<std::string>& ha
         needle = toLowerCase(needle);
 
     if (exact)
-        return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+        return std::ranges::find(haystack, needle) != haystack.end();
 
-    for (const std::string& query : haystack)
-    {
-        if (needle.starts_with(query))
-            return true;
-    }
-
-    return false;
+    return std::ranges::any_of(haystack, [needle](const std::string& query) {
+        return needle.starts_with(query);
+    });
 }
 
 bool Options::matchValueInList(std::string needle, const std::vector<std::string>& haystack) const
@@ -118,18 +116,16 @@ bool Options::matchValueInList(std::string needle, const std::vector<std::string
         needle = toLowerCase(needle);
 
     char* err;
-    double needleNum = std::strtod(needle.c_str(), &err);
+    const double needleNum = std::strtod(needle.c_str(), &err);
 
     if (*err)
     {
         if (exact)
-            return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+            return std::ranges::find(haystack, needle) != haystack.end();
 
-        for (const std::string& query : haystack)
-            if (needle.starts_with(query))
-                return true;
-
-        return false;
+        return std::ranges::any_of(haystack, [needle](const std::string& query) {
+            return needle.starts_with(query);
+        });
     }
 
     // If we get here, needle is a number. Check if we should do a numeric comparison
@@ -149,24 +145,6 @@ bool Options::matchValueInList(std::string needle, const std::vector<std::string
         if (needle.starts_with(query))
             return true;
     }
-
-    return false;
-}
-
-bool Options::matchKeyFilters(const Entity& entity)
-{
-    for (const auto& [key, value] : entity)
-        if (g_options.matchInList(key, g_options.keys))
-            return true;
-
-    return false;
-}
-
-bool Options::matchValueFilters(const Entity& entity)
-{
-    for (const auto& [key, value] : entity)
-        if (g_options.matchValueInList(value, g_options.values))
-            return true;
 
     return false;
 }
@@ -306,10 +284,16 @@ void Bsp::parse()
                 if (!g_options.matchInList(entity.at("classname"), g_options.classnames))
                     continue;
 
-            if (!g_options.keys.empty() && !g_options.matchKeyFilters(entity))
+            if (!g_options.keys.empty()
+                && !std::ranges::any_of(entity | std::views::keys, [](const std::string& key) {
+                    return g_options.matchInList(key, g_options.keys);
+                }))
                 continue;
 
-            if (!g_options.values.empty() && !g_options.matchValueFilters(entity))
+            if (!g_options.values.empty()
+                && !std::ranges::any_of(entity | std::views::values, [](const std::string& value) {
+                    return g_options.matchInList(value, g_options.values);
+                }))
                 continue;
 
             if (g_options.flags > 0)

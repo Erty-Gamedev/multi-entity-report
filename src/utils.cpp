@@ -170,7 +170,7 @@ bool confirm_dialogue(const bool yesDefault)
 
 std::string toLowerCase(std::string str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [] (unsigned char c) {
+    std::ranges::transform(str, str.begin(), [] (const unsigned char c) {
         return std::tolower(c);
     });
     return str;
@@ -178,7 +178,7 @@ std::string toLowerCase(std::string str)
 
 std::string toUpperCase(std::string str)
 {
-    std::transform(str.begin(), str.end(), str.begin(), [] (unsigned char c) {
+    std::ranges::transform(str, str.begin(), [] (const unsigned char c) {
         return std::toupper(c);
     });
     return str;
@@ -191,8 +191,7 @@ std::string unSteampipe(std::string str)
 
     for (auto const& steampipe : c_SteamPipes)
     {
-        size_t matchPosition = str.rfind(steampipe);
-        if (matchPosition != std::string::npos)
+        if (const size_t matchPosition = str.rfind(steampipe); matchPosition != std::string::npos)
         {
             str.replace(matchPosition, steampipe.length(), "");
             return str;

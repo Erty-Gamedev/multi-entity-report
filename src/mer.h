@@ -39,8 +39,6 @@ struct Options
 	void checkMaps();
 	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
 	bool matchValueInList(std::string needle, const std::vector<std::string>& haystack) const;
-	bool matchKeyFilters(const Entity& entity);
-	bool matchValueFilters(const Entity& entity);
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
 	void findGlobsInMod(const std::filesystem::path& modDir);
