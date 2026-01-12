@@ -14,7 +14,7 @@ using namespace Styling;
 static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
 
-static inline void handleArgs(const int argc, char* argv[])
+static void handleArgs(const int argc, char* argv[])
 {
     // Eager args
     for (int i = 1; i < argc; ++i)
@@ -191,9 +191,12 @@ static inline void handleArgs(const int argc, char* argv[])
             exit(EXIT_SUCCESS);
         }
 
-        std::cout << style(info) << "Match ANY flag? (y/N): " << style();
-        if (confirm_dialogue(false))
-            g_options.flagsOr = true;
+        if  (g_options.flags > 0)
+        {
+            std::cout << style(info) << "Match ANY flag? (y/N): " << style();
+            if (confirm_dialogue(false))
+                g_options.flagsOr = true;
+        }
     }
 
     if (g_options.mods.empty())
