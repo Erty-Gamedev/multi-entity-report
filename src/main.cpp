@@ -228,11 +228,17 @@ int main(const int argc, char* argv[])
     {
         std::cout << map.string() << ": [\n";
 
-        for (const auto&[index, classname, targetname] : entries)
+        for (const auto&[index, flags, classname, targetname, key, value] : entries)
         {
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())
                 std::cout << ", targetname '" << targetname << "'";
+            if (!key.empty())
+                std::cout << ", key '" << key << "'";
+            if (!value.empty() && key != "targetname")
+                std::cout << ", value '" << value << "'";
+            if (flags > 0)
+                std::cout << ", flags '" << flags << "'";
             std::cout << ")\n";
         }
 

@@ -9,8 +9,8 @@
 struct EntityEntry
 {
 	int index;
-	std::string classname;
-	std::string targetname;
+	unsigned int flags = 0;
+	std::string classname, targetname, key, value;
 };
 
 using Entity = std::unordered_map<std::string, std::string>;
@@ -36,9 +36,11 @@ struct Options
 	bool interactiveMode = false;
 
 	void findGlobs();
-	void checkMaps();
-	bool matchInList(std::string needle, const std::vector<std::string>& haystack) const;
-	bool matchValueInList(std::string needle, const std::vector<std::string>& haystack) const;
+	void checkMaps() const;
+	std::string matchInList(std::string needle, const std::vector<std::string>& haystack) const;
+	std::string  matchValueInList(std::string needle, const std::vector<std::string>& haystack) const;
+	std::string matchKey(const Entity& entity) const;
+	std::string matchValue(const Entity& entity) const;
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
 	void findGlobsInMod(const std::filesystem::path& modDir);
@@ -110,7 +112,7 @@ namespace BSPFormat
 	struct BspHeader
 	{
 		std::int32_t version;
-		BspLump lumps[LumpIndex::Headerlumps];
+		BspLump lumps[Headerlumps];
 	};
 #pragma pack(pop)
 

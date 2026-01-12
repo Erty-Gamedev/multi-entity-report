@@ -97,56 +97,95 @@ void Options::findAllMods()
     }
 }
 
-bool Options::matchInList(std::string needle, const std::vector<std::string>& haystack) const
+std::string Options::matchInList(std::string needle, const std::vector<std::string>& haystack) const
 {
     if (!caseSensitive)
         needle = toLowerCase(needle);
 
     if (exact)
-        return std::ranges::find(haystack, needle) != haystack.end();
+    {
+        if (const auto match = std::ranges::find(haystack, needle); match != haystack.end())
+            return *match;
+        return "";
+    }
 
-    return std::ranges::any_of(haystack, [needle](const std::string& query) {
-        return needle.starts_with(query);
-    });
+    for (const auto& query : haystack)
+    {
+        if (needle.starts_with(query))
+            return needle;
+    }
+
+    return "";
 }
 
-bool Options::matchValueInList(std::string needle, const std::vector<std::string>& haystack) const
+std::string Options::matchValueInList(std::string needle, const std::vector<std::string>& haystack) const
 {
-    if (!caseSensitive)
-        needle = toLowerCase(needle);
+    std::string needleFull = needle;
+    if (const auto hashPos = needle.find('#'); hashPos != std::string::npos)
+        needle = needle.substr(0, hashPos);
 
     char* err;
     const double needleNum = std::strtod(needle.c_str(), &err);
 
     if (*err)
     {
-        if (exact)
-            return std::ranges::find(haystack, needle) != haystack.end();
+        if (!caseSensitive)
+            needle = toLowerCase(needle);
 
-        return std::ranges::any_of(haystack, [needle](const std::string& query) {
-            return needle.starts_with(query);
-        });
+        if (exact)
+        {
+            if (const auto match = std::ranges::find(haystack, needle); match != haystack.end())
+                return *match;
+            return "";
+        }
+
+        for (const auto& query : haystack)
+        {
+            if (needle.starts_with(query))
+                return needle;
+        }
+
+        return "";
     }
 
     // If we get here, needle is a number. Check if we should do a numeric comparison
     for (const std::string& query : haystack)
     {
-        if (query.starts_with(">="))
-            return needleNum >= std::stod(query.substr(2));
-        if (query.starts_with("<="))
-            return needleNum <= std::stod(query.substr(2));
-        if (query.starts_with(">"))
-            return needleNum > std::stod(query.substr(1));
-        if (query.starts_with("<"))
-            return needleNum < std::stod(query.substr(1));
-        if (query.starts_with("="))
-            return fabs(needleNum - std::stod(query.substr(1))) < 0.01;
+        if ((query.starts_with(">=") && needleNum >= std::stod(query.substr(2))) ||
+            (query.starts_with("<=") && needleNum <= std::stod(query.substr(2))) ||
+            (query.starts_with(">") && needleNum > std::stod(query.substr(1))) ||
+            (query.starts_with("<") && needleNum < std::stod(query.substr(1))) ||
+            (query.starts_with("=") && fabs(needleNum - std::stod(query.substr(1))) < 0.01))
+            return needleFull;
 
         if (needle.starts_with(query))
-            return true;
+            return needleFull;
     }
 
-    return false;
+    return "";
+}
+
+
+std::string Options::matchKey(const Entity& entity) const
+{
+    for (const auto& needle : entity | std::views::keys)
+    {
+        if (auto match = matchInList(needle, keys); !match.empty())
+            return match;
+    }
+
+    return "";
+}
+
+std::string Options::matchValue(const Entity& entity) const
+{
+    for (const auto& needle : entity | std::views::values)
+    {
+        if (auto match = matchValueInList(needle, values); !match.empty())
+            return match;
+    }
+
+    return "";
 }
 
 void Options::findGlobs()
@@ -176,7 +215,7 @@ void Options::findGlobs()
         findGlobsInPipes(modDir);
 }
 
-void Options::checkMaps()
+void Options::checkMaps() const
 {
     using namespace BSPFormat;
 
@@ -191,7 +230,6 @@ void Options::checkMaps()
                 continue;
             std::cerr << "\r\033[0K";
             logger.warning("Could not read " + glob.string() + ". Reason: " + e.what());
-            continue;
         }
     }
 
@@ -244,7 +282,7 @@ bool Bsp::readComment()
 
 void Bsp::parse()
 {
-    BspLump& entLump = m_header.lumps[LumpIndex::Entities];
+    BspLump& entLump = m_header.lumps[Entities];
     m_file.seekg(entLump.offset, std::ios::beg);
 
     while (isspace(m_file.peek()))  // Skip whitepaces
@@ -257,7 +295,7 @@ void Bsp::parse()
     // If the next byte isn't {, check if we need to flip planes and entities lumps, we might have a bshift BSP
     if (m_file.peek() != '{')
     {
-        entLump = m_header.lumps[LumpIndex::Planes];
+        entLump = m_header.lumps[Planes];
         m_file.seekg(entLump.offset, std::ios::beg);
         while (isspace(m_file.peek()))  // Skip whitepaces
             m_file.get();
@@ -274,27 +312,40 @@ void Bsp::parse()
     {
         if (c == '{')
         {
-            int index = i++;
             Entity entity = readEntity();
+            EntityEntry matchEntry{.index = i++};
 
             if (!entity.contains("classname"))
                 continue;  // Just in case. Entities should always have a classname, but you never know
 
-            if (!g_options.classnames.empty())
-                if (!g_options.matchInList(entity.at("classname"), g_options.classnames))
+            if (!g_options.classnames.empty()) {
+                if (!g_options.matchInList(entity.at("classname"), g_options.classnames).empty())
+                    matchEntry.classname = entity.at("classname");
+                continue;
+            }
+
+            if (!g_options.keys.empty())
+            {
+                if (auto match = g_options.matchKey(entity); !match.empty())
+                    matchEntry.key = match;
+                else
                     continue;
+            }
 
-            if (!g_options.keys.empty()
-                && !std::ranges::any_of(entity | std::views::keys, [](const std::string& key) {
-                    return g_options.matchInList(key, g_options.keys);
-                }))
-                continue;
+            if (!g_options.values.empty())
+            {
+                if (!matchEntry.key.empty())
+                {
+                    matchEntry.value = g_options.matchValueInList(entity.at(matchEntry.key), g_options.values);
+                    if (matchEntry.value.empty())
+                        continue;
+                }
 
-            if (!g_options.values.empty()
-                && !std::ranges::any_of(entity | std::views::values, [](const std::string& value) {
-                    return g_options.matchInList(value, g_options.values);
-                }))
-                continue;
+                if (auto match = g_options.matchValue(entity); !match.empty())
+                    matchEntry.value = match;
+                else
+                    continue;
+            }
 
             if (g_options.flags > 0)
             {
@@ -309,13 +360,13 @@ void Bsp::parse()
             if (!g_options.entries.contains(m_filepath))
                 g_options.entries.insert_or_assign(m_filepath, std::vector<EntityEntry>{});
 
-            std::string targetname = entity.contains("targetname") ? entity.at("targetname") : "";
-            g_options.entries.at(m_filepath).emplace_back(index, entity.at("classname"), targetname);
+            matchEntry.targetname = entity.contains("targetname") ? entity.at("targetname") : "";
+            g_options.entries.at(m_filepath).push_back(matchEntry);
         }
     }
 }
 
-std::string Bsp::readToken(int maxLength)
+std::string Bsp::readToken(const int maxLength)
 {
     std::string token;
     token.reserve(maxLength);
