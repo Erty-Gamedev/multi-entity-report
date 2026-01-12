@@ -321,7 +321,8 @@ void Bsp::parse()
             if (!g_options.classnames.empty()) {
                 if (!g_options.matchInList(entity.at("classname"), g_options.classnames).empty())
                     matchEntry.classname = entity.at("classname");
-                continue;
+                else
+                    continue;
             }
 
             if (!g_options.keys.empty())
