@@ -443,3 +443,132 @@ Entity Bsp::readEntity()
 
     return entity;
 }
+
+
+Query::Query(const std::string& rawQuery)
+{
+    if (size_t pos = rawQuery.find("=="); pos != std::string::npos)
+    {
+        op = QueryExact;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 2);
+        return;
+    }
+    if (size_t pos = rawQuery.find("<="); pos != std::string::npos)
+    {
+        op = QueryLessEquals;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 2);
+        return;
+    }
+    if (size_t pos = rawQuery.find(">="); pos != std::string::npos)
+    {
+        op = QueryGreaterEquals;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 2);
+        return;
+    }
+    if (size_t pos = rawQuery.find("="); pos != std::string::npos)
+    {
+        op = QueryEquals;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 1);
+        return;
+    }
+    if (size_t pos = rawQuery.find("<"); pos != std::string::npos)
+    {
+        op = QueryLess;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 1);
+        return;
+    }
+    if (size_t pos = rawQuery.find(">"); pos != std::string::npos)
+    {
+        op = QueryGreater;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 1);
+        return;
+    }
+    valid = false;
+    key = rawQuery;
+}
+
+
+EntityEntry Query::testEntity(const Entity& entity, int index)
+{
+    EntityEntry entry{ .index = index, .classname = entity.at("classname") };
+
+    switch (op)
+    {
+    case QueryEquals:
+    {
+        if (!key.empty())
+        {
+            for (const auto& needle : entity | std::views::keys)
+            {
+                if (needle.starts_with(key))
+                {
+                    entry.key = needle;
+                    break;
+                }
+            }
+
+            if (entry.key.empty())
+                break;
+
+            if (value.empty())
+            {
+                entry.matched = true;
+                return entry;
+            }
+
+            if (entity.at(entry.key).starts_with(value))
+            {
+                entry.value = entity.at(entry.key);
+                entry.matched = true;
+                return entry;
+            }
+
+        } else if (!value.empty())
+        {
+            for (const auto& needle : entity | std::views::values)
+            {
+                if (needle.starts_with(value))
+                {
+                    entry.value = needle;
+                    entry.matched = true;
+                    return entry;
+                }
+            }
+        }
+        break;
+    }
+
+
+    case QueryExact:
+    {
+        if (!key.empty() && !entity.contains(key))
+            return entry;
+
+
+        if (!key.empty() && entity.contains(key))
+        {
+            if (!value.empty() && entity.at(key) == value)
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+
+        break;
+    }
+    }
+
+
+    if (!entry.matched && type == QueryOr && next)
+        return next->testEntity(entity);
+
+    return entry;
+}

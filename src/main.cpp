@@ -228,7 +228,7 @@ int main(const int argc, char* argv[])
     {
         std::cout << map.string() << ": [\n";
 
-        for (const auto&[index, flags, classname, targetname, key, value] : entries)
+        for (const auto&[index, flags, classname, targetname, key, value, matched] : entries)
         {
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())

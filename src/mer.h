@@ -11,9 +11,40 @@ struct EntityEntry
 	int index;
 	unsigned int flags = 0;
 	std::string classname, targetname, key, value;
+	bool matched = false;
 };
 
 using Entity = std::unordered_map<std::string, std::string>;
+
+
+struct Query
+{
+	enum QueryType
+	{
+		QueryOr,
+		QueryAnd
+	};
+	enum QueryOperator
+	{
+		QueryEquals,
+		QueryExact,
+		QueryGreater,
+		QueryLess,
+		QueryGreaterEquals,
+		QueryLessEquals
+	};
+
+	bool valid = true;
+	QueryType type = QueryOr;
+	QueryOperator op = QueryEquals;
+	unsigned int flags = 0u;
+	std::string key, value;
+	Query* next = nullptr;
+
+	Query(const std::string& rawQuery);
+
+	EntityEntry testEntity(const Entity& entity, int index = 0);
+};
 
 
 struct Options
