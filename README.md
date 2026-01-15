@@ -28,6 +28,7 @@ Other operators can be used instead of `=` to affect the behavior of the query:
 | ---------- | ----------------------------------------- |
 | =          | Match key/value starting with these terms |
 | ==         | Match only exact key/value                |
+| !=         | Match key/value that isn't these terms    |
 | <          | Numeric less than comparison              |
 | >          | Numeric greater than comparison           |
 | <=         | Numeric less or equal to comparison       |
@@ -46,6 +47,16 @@ Half-Life\valve\maps\c1a0.bsp: [
   monster_gman (index 55, targetname 'argumentg', classname=monster_gman AND targetname=argumentg)
 ]
 ```
+
+### Spawnflags
+
+A search query on the spawnflags key will check if *any* flag of the
+search term is set when using the `=` operator (`spawnflags & query`),
+if using the `==` operator *all* flags in the search term must be set to match
+(`spawnflags & query == query`), and if using the `!=` operator
+the query will only match if none of the flags in the search term matches
+(`spawnflags & query == 0`).<br>
+Comparison operators will do numeric comparisons as normal.
 
 ## Interactive mode
 

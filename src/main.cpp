@@ -109,6 +109,7 @@ static void handleArgs(const int argc, char* argv[])
             << style(brightBlack) <<
             " =              Match key/value starting with these terms\n"
             " ==             Match only exact key/value\n"
+            " !=             Match only different key/value\n"
             " <, >, <=, >=   Numerical comparison on the value (less than, greater than, etc)\n"
             << style(success) <<
             "Keys with multiple space-separated values can be indexed with square brackets,\n"

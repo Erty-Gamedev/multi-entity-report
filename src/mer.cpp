@@ -33,7 +33,7 @@ void printUsage()
            "  use the AND keyword inbetween queries to and-chain the queries.\n"
            "  Use square brackets on a key with multiple values to access a specific element,\n"
            "  e.g. origin[1] to query the second element.\n"
-           "  Use == instead of = for exact matches only, or </>/>=/<= for numeric comparisons.\n\n"
+           "  Use == instead of = for exact matches only, != not matching,\n or </>/>=/<= for numeric comparisons.\n\n"
 
         << style(bold) << "OPTIONS\n" << style()
         << "  --case       -s      make matches case sensitive\n"
@@ -635,6 +635,51 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
 
         return entry;
     }
+
+
+    if (key == "spawnflags" && valueIsNumeric && entity.contains(key))
+    {
+        unsigned int valueUInt = static_cast<unsigned int>(valueNumeric);
+        if (unsigned int spawnflags = std::atoi(entity.at(key).c_str()); spawnflags > 0)
+        {
+            switch (op)
+            {
+            case QueryEquals:
+            {
+                if (spawnflags & valueUInt)
+                {
+                    entry.queryMatches = key + '=' + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            }
+            case QueryNotEquals:
+            {
+                if ((spawnflags & valueUInt) == 0)
+                {
+                    entry.queryMatches = key + "!=" + value;
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            }
+            case QueryExact:
+            {
+                if ((spawnflags & valueUInt) == valueUInt)
+                {
+                    entry.queryMatches = key + '=' + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            }
+            }
+        }
+
+        return entry;
+    }
+
 
     switch (op)
     {

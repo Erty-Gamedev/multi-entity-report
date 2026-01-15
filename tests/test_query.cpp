@@ -7,7 +7,8 @@ static const Entity entity{
 	{ "targetname", "argumentg" },
 	{ "origin", "32 -64 128" },
 	{ "renderamt", "255" },
-	{ "sc_mm_value_hash", "0.1#1" }
+	{ "sc_mm_value_hash", "0.1#1" },
+	{ "spawnflags", "19"}  // WaitTillSeen 1 | Gag 2 | Prisoner 16 = 19
 };
 
 
@@ -302,6 +303,41 @@ TEST_SUITE("query match")
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
 			CHECK(entry.queryMatches == "sc_mm_value_hash=0.1#1");
+		}
+	}
+
+	TEST_CASE("match spawnflags")
+	{
+		SUBCASE("match any flags")
+		{
+			Query query{ "spawnflags=2" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "spawnflags=19");
+		}
+
+		SUBCASE("match all flags")
+		{
+			Query query{ "spawnflags==3" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "spawnflags=19");
+		}
+
+		SUBCASE("fail all flags")
+		{
+			Query query{ "spawnflags==5" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == false);
+			CHECK(entry.queryMatches == "");
+		}
+
+		SUBCASE("match no flags")
+		{
+			Query query{ "spawnflags!=4" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "spawnflags!=4");
 		}
 	}
 }
