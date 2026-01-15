@@ -33,7 +33,8 @@ void printUsage()
            "  use the AND keyword inbetween queries to and-chain the queries.\n"
            "  Use square brackets on a key with multiple values to access a specific element,\n"
            "  e.g. origin[1] to query the second element.\n"
-           "  Use == instead of = for exact matches only, != not matching,\n or </>/>=/<= for numeric comparisons.\n\n"
+           "  Use == instead of = for exact matches only, != not matching,\n"
+           "  or </>/>=/<= for numeric comparisons.\n\n"
 
         << style(bold) << "OPTIONS\n" << style()
         << "  --case       -s      make matches case sensitive\n"
