@@ -313,50 +313,10 @@ void Bsp::parse()
         if (c == '{')
         {
             Entity entity = readEntity();
-            EntityEntry matchEntry{.index = i++};
+            EntityEntry matchEntry = g_options.firstQuery->testChain(entity, i++);
 
-            if (!entity.contains("classname"))
-                continue;  // Just in case. Entities should always have a classname, but you never know
-
-            if (!g_options.classnames.empty()) {
-                if (!g_options.matchInList(entity.at("classname"), g_options.classnames).empty())
-                    matchEntry.classname = entity.at("classname");
-                else
-                    continue;
-            }
-
-            if (!g_options.keys.empty())
-            {
-                if (auto match = g_options.matchKey(entity); !match.empty())
-                    matchEntry.key = match;
-                else
-                    continue;
-            }
-
-            if (!g_options.values.empty())
-            {
-                if (!matchEntry.key.empty())
-                {
-                    matchEntry.value = g_options.matchValueInList(entity.at(matchEntry.key), g_options.values);
-                    if (matchEntry.value.empty())
-                        continue;
-                }
-
-                if (auto match = g_options.matchValue(entity); !match.empty())
-                    matchEntry.value = match;
-                else
-                    continue;
-            }
-
-            if (g_options.flags > 0)
-            {
-                unsigned int spawnflags = 0;
-                if (entity.contains("spawnflags"))
-                    spawnflags = std::stoi(entity.at("spawnflags"));
-                if (const unsigned int matches = spawnflags & g_options.flags; matches == 0
-                    || (!g_options.flagsOr && matches != g_options.flags))
-                    continue;
-            }
+            if (!matchEntry.matched)
+                continue;
 
             if (!g_options.entries.contains(m_filepath))
                 g_options.entries.insert_or_assign(m_filepath, std::vector<EntityEntry>{});

@@ -36,6 +36,7 @@ static void handleArgs(const int argc, char* argv[])
 
     int verbosity = 0;
 
+    Query* currentQuery = nullptr;
     for (int i = 1; i < argc; ++i)
     {
         if (strcmp(argv[i], "--classname") == 0 || strcmp(argv[i], "-c") == 0)
@@ -115,7 +116,27 @@ static void handleArgs(const int argc, char* argv[])
             continue;
         }
 
-        g_options.mods.emplace_back(unSteampipe(argv[i]));
+
+        if (currentQuery && strcmp(toLowerCase(argv[i]).c_str(), "or") == 0)
+            continue;
+        if (currentQuery && strcmp(toLowerCase(argv[i]).c_str(), "and") == 0)
+        {
+            currentQuery->type = Query::QueryAnd;
+            continue;
+        }
+
+
+        std::unique_ptr<Query> query = std::make_unique<Query>(argv[i]);
+        if (query->valid)
+        {
+            g_options.queries.push_back(std::move(query));
+            Query* newQuery = g_options.queries.back().get();
+            if (currentQuery)
+                currentQuery->next = newQuery;
+            currentQuery = newQuery;
+        }
+        else
+            g_options.mods.emplace_back(unSteampipe(argv[i]));
     }
 
     if (verbosity > 2)
@@ -126,63 +147,70 @@ static void handleArgs(const int argc, char* argv[])
         logger.setLevel(Logging::LogLevel::LOG_WARNING);
 
 
-    if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
+    if (g_options.queries.empty())
     {
         g_options.interactiveMode = true;
         std::string buffer;
 
-        std::cout << style(info) << "Specify mods to narrow search by (leave empty for global search): " << style();
-        std::getline(std::cin, buffer);
-        if (buffer.empty())
-            g_options.globalSearch = true;
-        else
+        if (g_options.mods.empty())
         {
-            const std::vector<std::string>& parts = splitString(buffer, ' ');
-            for (const auto& part : parts)
-                g_options.mods.push_back(unSteampipe(part));
+            std::cout << style(info) << "Specify mods to narrow search by (leave empty for global search): " << style();
+            std::getline(std::cin, buffer);
+            if (buffer.empty())
+                g_options.globalSearch = true;
+            else
+            {
+                const std::vector<std::string>& parts = splitString(buffer, ' ');
+                for (const auto& part : parts)
+                    g_options.mods.push_back(unSteampipe(part));
+            }
         }
 
-        std::cout << style(info) << "Enter classnames to filter by: " << style();
-        std::getline(std::cin, buffer);
-        if (!buffer.empty())
-        {
-            const std::vector<std::string>& parts = splitString(buffer, ' ');
-            for (const auto& part : parts)
-                g_options.classnames.emplace_back(part);
-        }
+        std::cout << style(success) <<
+            "Search queries are key=value pairs. Multiple queries can be entered separated by spaces.\n"
+            "The value can be left out to search for any matching key,"
+            "\nor the key can be left out to search for any matching value.\n"
+            "Different operators can be used:\n"
+            << style(brightBlack) <<
+            " =              Match key/value starting with these values\n"
+            " ==             Match only exact key/value\n"
+            " <, >, <=, >=   Numerical comparison on the value (less than, greater than, etc)\n"
+            << style(success) <<
+            "Keys with multiple space-separated values can be indexed with square brackets,\n"
+            "e.g.: origin[1] to query the second value.\n"
+            "Queries are implicitly or-chained. Use the AND keyword to and-chain queries.\nExample: "
+            << style(brightBlack) << "classname=monster AND =argument origin[2]<200\n" << style(info)
+            << "Enter search queries: " << style();
 
-        std::cout << style(info) << "Enter keys to filter by: " << style();
-        std::getline(std::cin, buffer);
-        if (!buffer.empty())
-        {
-            const std::vector<std::string>& parts = splitString(buffer, ' ');
-            for (const auto& part : parts)
-                g_options.keys.emplace_back(part);
-        }
-
-        std::cout << style(info) << "Enter values to filter by: " << style();
-        std::getline(std::cin, buffer);
-        if (!buffer.empty())
-        {
-            const std::vector<std::string>& parts = splitString(buffer, ' ');
-            for (const auto& part : parts)
-                g_options.values.emplace_back(part);
-        }
-
-        std::cout << style(info) << "Only exact matches? (y/N): " << style();
-        if (confirm_dialogue(false))
-            g_options.exact = true;
-
-        std::cout << style(info) << "Enter flags to filter by: " << style();
         std::getline(std::cin, buffer);
         if (!buffer.empty())
         {
             const std::vector<std::string>& parts = splitString(buffer, ' ');
             for (const auto& part : parts)
-                g_options.flags |= std::stoi(part);
+            {
+                if (currentQuery && strcmp(toLowerCase(part).c_str(), "or") == 0)
+                    continue;
+                if (currentQuery && strcmp(toLowerCase(part).c_str(), "and") == 0)
+                {
+                    currentQuery->type = Query::QueryAnd;
+                    continue;
+                }
+
+                std::unique_ptr<Query> query = std::make_unique<Query>(part);
+                if (query->valid)
+                {
+                    g_options.queries.push_back(std::move(query));
+                    Query* newQuery = g_options.queries.back().get();
+                    if (currentQuery)
+                        currentQuery->next = newQuery;
+                    currentQuery = newQuery;
+                }
+                else
+                    std::cout << style(warning) << "Invalid query: " << part << std::endl;
+            }
         }
 
-        if (g_options.classnames.empty() && g_options.values.empty() && g_options.flags == 0)
+        if (g_options.queries.empty())
         {
             std::cout << style(warning) << "Please specify a search query\n" << style() << std::endl;
             printUsage();
@@ -190,27 +218,12 @@ static void handleArgs(const int argc, char* argv[])
             confirm_dialogue();
             exit(EXIT_SUCCESS);
         }
-
-        if  (g_options.flags > 0)
-        {
-            std::cout << style(info) << "Match ANY flag? (y/N): " << style();
-            if (confirm_dialogue(false))
-                g_options.flagsOr = true;
-        }
     }
+
+    g_options.firstQuery = g_options.queries.front().get();
 
     if (g_options.mods.empty())
         g_options.globalSearch = true;
-
-    if (!g_options.caseSensitive)
-    {
-        for (std::string& str : g_options.classnames)
-            str = toLowerCase(str);
-        for (std::string& str : g_options.keys)
-            str = toLowerCase(str);
-        for (std::string& str : g_options.values)
-            str = toLowerCase(str);
-    }
 }
 
 
@@ -228,17 +241,13 @@ int main(const int argc, char* argv[])
     {
         std::cout << map.string() << ": [\n";
 
-        for (const auto&[index, flags, classname, targetname, key, value, matched] : entries)
+        for (const auto&[index, flags, classname, targetname, key, value, queryMatches, matched] : entries)
         {
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())
                 std::cout << ", targetname '" << targetname << "'";
-            if (!key.empty())
-                std::cout << ", key '" << key << "'";
-            if (!value.empty() && key != "targetname")
-                std::cout << ", value '" << value << "'";
-            if (flags > 0)
-                std::cout << ", flags '" << flags << "'";
+            if (!queryMatches.empty())
+                std::cout << ", " << queryMatches;
             std::cout << ")\n";
         }
 

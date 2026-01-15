@@ -78,6 +78,7 @@ struct Options
 	bool exact = false;
 	bool caseSensitive = false;
 	bool interactiveMode = false;
+	Query* firstQuery;
 
 	void findGlobs();
 	void checkMaps() const;
