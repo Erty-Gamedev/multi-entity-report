@@ -168,11 +168,11 @@ static void handleArgs(const int argc, char* argv[])
 
         std::cout << style(success) <<
             "Search queries are key=value pairs. Multiple queries can be entered separated by spaces.\n"
-            "The value can be left out to search for any matching key,"
+            "The value can be left out to only match the key,"
             "\nor the key can be left out to search for any matching value.\n"
             "Different operators can be used:\n"
             << style(brightBlack) <<
-            " =              Match key/value starting with these values\n"
+            " =              Match key/value starting with these terms\n"
             " ==             Match only exact key/value\n"
             " <, >, <=, >=   Numerical comparison on the value (less than, greater than, etc)\n"
             << style(success) <<

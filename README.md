@@ -2,9 +2,10 @@
 
 CLI tool for performing 'entity report'-like search on all GoldSrc maps in a Steam directory.
 
-Output is a list of BSP files containing the entities matching the search query.<br>
+Output is a list of BSP files containing the entities matching the search queries.<br>
 Each BSP will have its own list of the matching entities by their classnames,
-index in the entity lump, and targetname if it has one.
+index in the entity lump, targetname if it has one, and which keys/values that
+matched the queries.
 
 ## Usage
 
@@ -13,59 +14,40 @@ Call the application through a commandline interface with one or more arguments
 defining the search query. You may optionally provide mod names to narrow the search
 to those mods only, e.g. `cstrike` or `valve`.
 
-The following arguments are available for building a search query.
-Using them more than once builds a list of possible terms to match against,
-i.e. `-k targetname -v my_entity1 -v my_entity2` will match any entity whose targetname is *either* my_entity1 or my_entity2.
+Search queries are key=value pairs separated by spaces and implicitly or-chained.
+Use the *AND* keyword to and-chain two queries.<br>
+The value can be left out to only match the key or the key can be left out
+to search for any matching value.
 
-| Argument         | Description                        |
-| ---------------- | ---------------------------------- |
-| -m, --mod        | Mod folder to search within (leave out for global search) |
-| -c, --classname  | Classnames that must match         |
-| -k, --key        | Keys that must match               |
-| -v, --value      | Values that must match             |
-| -f, --flags      | Spawnflags that must match (ALL must match unless --flags_or is used) |
+Keys with multiple values such as *origin* can be queried on a specific element
+using square brackets index notation, e.g. `origin[1]` will query the second element.
 
-By default a partial match is used for classnames, keys and values,
-only the beginning of each field need to match the query
-(meaning the classname query "monster_alien" will match "monster_alien_controller", "monster_alien_grunt" and "monster_alien_slave").<br>
-One can change this by using `--exact` for whole term matches only.
+Other operators can be used instead of `=` to affect the behavior of the query:
 
-Various options can be used to influence the search:
-
-| Options          | Description                        |
-| ---------------- | ---------------------------------- |
-| -o, --flags_or   | Change spawnflag check mode to ANY |
-| -e, --exact      | Matches must be exact (whole term) |
-| -s, --case       | Make matches case sensitive        |
+| Operator   | Description                               |
+| ---------- | ----------------------------------------- |
+| =          | Match key/value starting with these terms |
+| ==         | Match only exact key/value                |
+| <          | Numeric less than comparison              |
+| >          | Numeric greater than comparison           |
+| <=         | Numeric less or equal to comparison       |
+| >=         | Numeric greater or equal to comparison    |
 
 ### Example
 
 ```cli
-mer.exe valve -c monster_gman -v argument
+mer.exe valve classname=monster_gman AND =argument
 ```
 
 Will result in
 
 ```txt
 Half-Life\valve\maps\c1a0.bsp: [
-  monster_gman (index 54, targetname 'argumentg')
+  monster_gman (index 55, targetname 'argumentg', classname=monster_gman AND targetname=argumentg)
 ]
 ```
 
-### Spawnflags
-
-The `--flags` argument will by default match entities that have all the
-specified spawnflags enabled, i.e. `-f 2 -f 8` will only match entities that have
-both the second (2) and fourth (8) spawnflags enabled.
-
-All `--flags` arguments are bitwise OR'd together,
-which means `-f 1 -f 4` is equivalent to `-f 5`.
-
-Using the `--flags_or` argument changes the spawnflags check to ANY mode.
-This means only one of the specified spawnflags must be enabled to match.
-
 ## Interactive mode
 
-You may also run the applications without any arguments, in which case it will start
-interactive mode. The application will then ask you to provide filters for each
-type of search query. Multiple filters can be entered by separating them with spaces.
+You may also run the applications without any arguments,
+in which case it will start interactive mode.
