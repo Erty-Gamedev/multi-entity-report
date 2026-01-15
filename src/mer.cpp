@@ -18,33 +18,32 @@ Options g_options{};
 void printUsage()
 {
 #ifdef _WIN32
-    std::cout << "Usage: mer.exe [mods...] <search query> [options...]\n";
+    std::cout << "Usage: mer.exe [mods... [search queries... [options...]]]\n";
 #else
-    std::cout << "Usage: mer [mods...] <search query> [options...]\n";
+    std::cout << "Usage: mer [mods... [search queries... [options...]]]\n";
 #endif
     std::cout
-        << style(brightBlack |italic) << "Run without any arguments to start interactive mode\n\n"
+        << style(brightBlack|italic) << "Run without any arguments to start interactive mode\n\n"
 
         << style(bold) << "ARGUMENTS\n" << style()
-        << "  mods                 filter search to these mods only, global search otherwise (e.g. cstrike)\n"
+        << "  mods                 filter search to these mods only, global search otherwise (e.g. cstrike)\n\n"
 
-        << style(bold) << "SEARCH QUERY\n" << style()
-        << "  --classname  -c      classnames that must match\n"
-        << "  --key        -k      keys that must match\n"
-        << "  --value      -v      values that must match\n"
-        << "  --flags      -f      spawnflags that must match (ALL must match unless --flags_or is used)\n"
+        << style(bold) << "SEARCH QUERIES\n" << style() <<
+           "  key=value pairs separated by spaces. Implicitly or-chained,\n"
+           "  use the AND keyword inbetween queries to and-chain the queries.\n"
+           "  Use square brackets on a key with multiple values to access a specific element,\n"
+           "  e.g. origin[1] to query the second element.\n"
+           "  Use == instead of = for exact matches only, or </>/>=/<= for numeric comparisons.\n\n"
 
         << style(bold) << "OPTIONS\n" << style()
-        << "  --flags_or   -o      change spawnflag check mode to ANY\n"
-        << "  --exact      -e      matches must be exact (whole term)\n"
         << "  --case       -s      make matches case sensitive\n"
         << "  --help       -h      print this message and exit\n"
         << "  --version            print application version and exit\n"
         << "  --verbose            enable verbose logging\n\n"
 
         << style(italic) << "Example:\n" << style()
-        << "> " << style(brightBlack) << "mer" << style() << " valve -c monster_gman -v argument\n"
-        << "Half-Life/valve/maps/c1a0.bsp: [\n  monster_gman(index 55, targetname 'argumentg')\n]\n"
+        << "> " << style(brightBlack) << "mer" << style() << " valve classname=monster_gman AND =argument\n"
+        << "Half-Life/valve/maps/c1a0.bsp: [\n  monster_gman (index 55, targetname 'argumentg', classname=monster_gman AND targetname=argumentg)\n]\n"
         << std::endl;
 }
 
