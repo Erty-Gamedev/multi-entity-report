@@ -4,21 +4,24 @@
 #include <fstream>
 #include <unordered_map>
 #include <filesystem>
+#include <memory>
 
 
 struct EntityEntry
 {
-	int index;
+	unsigned int index;
 	unsigned int flags = 0;
 	std::string classname, targetname, key, value;
+	std::string queryMatches;
 	bool matched = false;
 };
 
 using Entity = std::unordered_map<std::string, std::string>;
 
 
-struct Query
+class Query
 {
+public:
 	enum QueryType
 	{
 		QueryOr,
@@ -28,6 +31,7 @@ struct Query
 	{
 		QueryEquals,
 		QueryExact,
+		QueryNotEquals,
 		QueryGreater,
 		QueryLess,
 		QueryGreaterEquals,
@@ -35,15 +39,23 @@ struct Query
 	};
 
 	bool valid = true;
+	bool elementAccess = false;
+	bool valueIsNumeric = false;
 	QueryType type = QueryOr;
 	QueryOperator op = QueryEquals;
 	unsigned int flags = 0u;
 	std::string key, value;
+	double valueNumeric;
+	int valueIndex = 0;
 	Query* next = nullptr;
 
 	Query(const std::string& rawQuery);
 
-	EntityEntry testEntity(const Entity& entity, int index = 0);
+	EntityEntry testEntity(const Entity& entity, unsigned int index = 0u) const;
+	EntityEntry testChain(const Entity& entity, unsigned int index = 0u);
+private:
+	void parse(const std::string& rawQuery);
+	void checkIndexedKey();
 };
 
 
@@ -56,6 +68,7 @@ struct Options
 	std::vector<std::string> keys;
 	std::vector<std::string> values;
 	std::vector<std::string> mods;
+	std::vector<std::unique_ptr<Query>> queries;
 	std::vector<std::filesystem::path> globs;
 	std::vector<std::filesystem::path> modDirs;
 	std::unordered_map<std::filesystem::path, std::vector<EntityEntry>> entries;

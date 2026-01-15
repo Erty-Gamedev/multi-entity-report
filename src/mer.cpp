@@ -307,7 +307,7 @@ void Bsp::parse()
     const int lumpEnd = entLump.offset + entLump.length;
 
     char c;
-    int i = 0;
+    unsigned int i = 0u;
     while (m_file.get(c) && m_file.tellg() < lumpEnd)
     {
         if (c == '{')
@@ -444,8 +444,51 @@ Entity Bsp::readEntity()
     return entity;
 }
 
+static std::string keyStartsWith(const Entity& entity, const std::string& prefix)
+{
+    for (const auto& key: entity | std::views::keys)
+        if (!key.empty() && key.starts_with(prefix))
+            return key;
+    return "";
+}
+
+static std::string valueStartsWith(const Entity& entity, const std::string& prefix)
+{
+    for (const auto& [key, value] : entity)
+        if (!value.empty() && value.starts_with(prefix))
+            return key;
+    return "";
+}
+
+static bool isValueNumeric(const std::string& value, double& numeric)
+{
+    std::string valueTrimmed = value;
+    if (const auto suffixPos = value.find('#'); suffixPos != std::string::npos)
+        valueTrimmed = value.substr(0, suffixPos);
+    else if (const auto suffixPos = value.find(' '); suffixPos != std::string::npos)
+        valueTrimmed = value.substr(0, suffixPos);
+
+    char* err;
+    numeric = std::strtod(valueTrimmed.c_str(), &err);
+
+    if (*err)
+        return false;
+
+    return true;
+}
+
+
 
 Query::Query(const std::string& rawQuery)
+{
+    parse(rawQuery);
+    if (!valid)
+        return;
+    checkIndexedKey();
+    valueIsNumeric = isValueNumeric(value, valueNumeric);
+}
+
+void Query::parse(const std::string& rawQuery)
 {
     if (size_t pos = rawQuery.find("=="); pos != std::string::npos)
     {
@@ -464,6 +507,13 @@ Query::Query(const std::string& rawQuery)
     if (size_t pos = rawQuery.find(">="); pos != std::string::npos)
     {
         op = QueryGreaterEquals;
+        key = rawQuery.substr(0, pos);
+        value = rawQuery.substr(pos + 2);
+        return;
+    }
+    if (size_t pos = rawQuery.find("!="); pos != std::string::npos)
+    {
+        op = QueryNotEquals;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 2);
         return;
@@ -493,10 +543,139 @@ Query::Query(const std::string& rawQuery)
     key = rawQuery;
 }
 
+void Query::checkIndexedKey()
+{
+    if (key.empty())
+        return;
 
-EntityEntry Query::testEntity(const Entity& entity, int index)
+    if (size_t pos = key.find('['), posEnd = key.find(']'); pos != std::string::npos && posEnd != std::string::npos)
+    {
+        const std::string& rawIndex = key.substr(pos + 1, key.length() - posEnd);
+        valueIndex = std::stoi(rawIndex);
+        key = key.substr(0, pos);
+        elementAccess = true;
+    }
+}
+
+
+// TODO: Clean up, make more DRY
+EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
 {
     EntityEntry entry{ .index = index, .classname = entity.at("classname") };
+
+    // Nothing to test
+    if (key.empty() && value.empty())
+        return entry;
+
+    if (elementAccess)
+    {
+        if (key.empty() || !entity.contains(key))
+            return entry;
+
+        auto parts = splitString(entity.at(key));
+        if (valueIndex > parts.size())
+            return entry;
+
+        std::string needle;
+        if (valueIndex < 0)
+            needle = parts[parts.size() + (valueIndex % parts.size())];
+        else
+            needle = parts[valueIndex];
+
+        switch (op)
+        {
+        case QueryEquals:
+        {
+            if (needle.starts_with(value))
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryNotEquals:
+        {
+            if (needle != value)
+            {
+                entry.key = key;
+                entry.value = '!' + value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]!=" + value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryExact:
+        {
+            if (needle == value)
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]==" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryGreater:
+        {
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryLess:
+        {
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryGreaterEquals:
+        {
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        case QueryLessEquals:
+        {
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
+            {
+                entry.key = key;
+                entry.value = needle;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        }
+
+        return entry;
+    }
 
     switch (op)
     {
@@ -504,61 +683,255 @@ EntityEntry Query::testEntity(const Entity& entity, int index)
     {
         if (!key.empty())
         {
-            for (const auto& needle : entity | std::views::keys)
+            if (const std::string& needle = keyStartsWith(entity, key); !needle.empty())
             {
-                if (needle.starts_with(key))
+                entry.key = needle;
+
+                if (value.empty())
                 {
-                    entry.key = needle;
-                    break;
+                    entry.queryMatches = entry.key + '=';
+                    entry.matched = true;
+                    return entry;
+                }
+
+                if (entity.at(needle).starts_with(value))
+                {
+                    entry.value = entity.at(needle);
+                    entry.queryMatches = entry.key + '=' + entry.value;
+                    entry.matched = true;
+                    return entry;
                 }
             }
 
-            if (entry.key.empty())
-                break;
+            break;
+        }
+        else if (!value.empty())
+        {
+            if (const std::string& needle = valueStartsWith(entity, value); !needle.empty())
+            {
+                entry.key = needle;
+                entry.value = entity.at(needle);
+                entry.queryMatches = entry.key + '=' + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+
+        break;
+    }
+    case QueryNotEquals:
+    {
+        if (!key.empty())
+        {
+            if (!entity.contains(key))
+                return entry;
+
+            if (!entity.at(key).starts_with(value))
+            {
+                entry.key = key;
+                entry.value = '!' + value;
+                entry.queryMatches = entry.key + "!=" + value;
+                entry.matched = true;
+                return entry;
+            }
+            break;
+        }
+        else if (!value.empty())
+        {
+            if (valueStartsWith(entity, value).empty())
+            {
+                entry.value = '!' + value;
+                entry.queryMatches = "!=" + value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+        break;
+    }
+    case QueryExact:
+    {
+        if (!key.empty())
+        {
+            if (!entity.contains(key))
+                return entry;
+
+            entry.key = key;
 
             if (value.empty())
             {
+                entry.queryMatches = entry.key + '=';
                 entry.matched = true;
                 return entry;
             }
 
-            if (entity.at(entry.key).starts_with(value))
+            if (entity.at(key) == value)
             {
-                entry.value = entity.at(entry.key);
+                entry.value = value;
+                entry.queryMatches = entry.key + '=' + entry.value;
                 entry.matched = true;
                 return entry;
             }
-
-        } else if (!value.empty())
+        }
+        else if (!value.empty())
         {
-            for (const auto& needle : entity | std::views::values)
+            for (const auto& [needleKey, needle] : entity)
             {
-                if (needle.starts_with(value))
+                if (needle == value)
                 {
+                    entry.key = needleKey;
                     entry.value = needle;
+                    entry.queryMatches = entry.key + '=' + entry.value;
                     entry.matched = true;
                     return entry;
                 }
             }
         }
+
         break;
     }
-
-
-    case QueryExact:
+    case QueryGreater:
     {
-        if (!key.empty() && !entity.contains(key))
+        if (value.empty() || (!key.empty() && !entity.contains(key)))
             return entry;
 
 
         if (!key.empty() && entity.contains(key))
         {
-            if (!value.empty() && entity.at(key) == value)
+            entry.key = key;
+
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum > valueNumeric)
             {
-                entry.key = key;
-                entry.value = value;
+                entry.value = entity.at(key);
+                entry.queryMatches = entry.key + '=' + entry.value;
                 entry.matched = true;
                 return entry;
+            }
+        }
+        else if (!value.empty())
+        {
+            for (const auto& [needleKey, needle] : entity)
+            {
+                double needleNum;
+                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
+                {
+                    entry.key = needleKey;
+                    entry.value = needle;
+                    entry.queryMatches = entry.key + '=' + entry.value;
+                    entry.matched = true;
+                    return entry;
+                }
+            }
+        }
+
+        break;
+    }
+    case QueryLess:
+    {
+        if (value.empty() || (!key.empty() && !entity.contains(key)))
+            return entry;
+
+
+        if (!key.empty() && entity.contains(key))
+        {
+            entry.key = key;
+
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum < valueNumeric)
+            {
+                entry.value = entity.at(key);
+                entry.queryMatches = entry.key + '=' + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+        else if (!value.empty())
+        {
+            for (const auto& [needleKey, needle] : entity)
+            {
+                double needleNum;
+                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
+                {
+                    entry.key = needleKey;
+                    entry.value = needle;
+                    entry.queryMatches = entry.key + '=' + entry.value;
+                    entry.matched = true;
+                    return entry;
+                }
+            }
+        }
+
+        break;
+    }
+    case QueryGreaterEquals:
+    {
+        if (value.empty() || (!key.empty() && !entity.contains(key)))
+            return entry;
+
+
+        if (!key.empty() && entity.contains(key))
+        {
+            entry.key = key;
+
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum >= valueNumeric)
+            {
+                entry.value = entity.at(key);
+                entry.queryMatches = entry.key + '=' + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+        else if (!value.empty())
+        {
+            for (const auto& [needleKey, needle] : entity)
+            {
+                double needleNum;
+                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
+                {
+                    entry.key = needleKey;
+                    entry.value = needle;
+                    entry.queryMatches = entry.key + '=' + entry.value;
+                    entry.matched = true;
+                    return entry;
+                }
+            }
+        }
+
+        break;
+    }
+    case QueryLessEquals:
+    {
+        if (value.empty() || (!key.empty() && !entity.contains(key)))
+            return entry;
+
+
+        if (!key.empty() && entity.contains(key))
+        {
+            entry.key = key;
+
+            double needleNum;
+            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum <= valueNumeric)
+            {
+                entry.value = entity.at(key);
+                entry.queryMatches = entry.key + '=' + entry.value;
+                entry.matched = true;
+                return entry;
+            }
+        }
+        else if (!value.empty())
+        {
+            for (const auto& [needleKey, needle] : entity)
+            {
+                double needleNum;
+                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
+                {
+                    entry.key = needleKey;
+                    entry.value = needle;
+                    entry.queryMatches = entry.key + '=' + entry.value;
+                    entry.matched = true;
+                    return entry;
+                }
             }
         }
 
@@ -566,9 +939,50 @@ EntityEntry Query::testEntity(const Entity& entity, int index)
     }
     }
 
+    return entry;
+}
 
-    if (!entry.matched && type == QueryOr && next)
-        return next->testEntity(entity);
+
+EntityEntry Query::testChain(const Entity& entity, unsigned int index)
+{
+    EntityEntry entry = testEntity(entity, index);
+
+    if (next)
+    {
+        if (type == QueryAnd)
+        {
+            if (!entry.matched)
+                return entry;
+
+            EntityEntry nextEntry = next->testChain(entity);
+            if (nextEntry.matched)
+            {
+                if (!nextEntry.queryMatches.empty())
+                    entry.queryMatches.append(" AND " + nextEntry.queryMatches);
+            }
+            else
+            {
+                entry.key = "";
+                entry.value = "";
+                entry.queryMatches = "";
+                entry.matched = false;
+            }
+        }
+        if (!entry.matched && type == QueryOr)
+        {
+            EntityEntry nextEntry = next->testChain(entity);
+
+            if (nextEntry.matched)
+            {
+                entry.matched = true;
+
+                if (entry.queryMatches.empty())
+                    entry.queryMatches = nextEntry.queryMatches;
+                else
+                    entry.queryMatches.append(" OR " + nextEntry.queryMatches);
+            }
+        }
+    }
 
     return entry;
 }
