@@ -97,99 +97,14 @@ void Options::findAllMods()
     }
 }
 
-std::string Options::matchInList(std::string needle, const std::vector<std::string>& haystack) const
-{
-    if (!caseSensitive)
-        needle = toLowerCase(needle);
-
-    if (exact)
-    {
-        if (const auto match = std::ranges::find(haystack, needle); match != haystack.end())
-            return *match;
-        return "";
-    }
-
-    for (const auto& query : haystack)
-    {
-        if (needle.starts_with(query))
-            return needle;
-    }
-
-    return "";
-}
-
-std::string Options::matchValueInList(std::string needle, const std::vector<std::string>& haystack) const
-{
-    std::string needleFull = needle;
-    if (const auto hashPos = needle.find('#'); hashPos != std::string::npos)
-        needle = needle.substr(0, hashPos);
-
-    char* err;
-    const double needleNum = std::strtod(needle.c_str(), &err);
-
-    if (*err)
-    {
-        if (!caseSensitive)
-            needle = toLowerCase(needle);
-
-        if (exact)
-        {
-            if (const auto match = std::ranges::find(haystack, needle); match != haystack.end())
-                return *match;
-            return "";
-        }
-
-        for (const auto& query : haystack)
-        {
-            if (needle.starts_with(query))
-                return needle;
-        }
-
-        return "";
-    }
-
-    // If we get here, needle is a number. Check if we should do a numeric comparison
-    for (const std::string& query : haystack)
-    {
-        if ((query.starts_with(">=") && needleNum >= std::stod(query.substr(2))) ||
-            (query.starts_with("<=") && needleNum <= std::stod(query.substr(2))) ||
-            (query.starts_with(">") && needleNum > std::stod(query.substr(1))) ||
-            (query.starts_with("<") && needleNum < std::stod(query.substr(1))) ||
-            (query.starts_with("=") && fabs(needleNum - std::stod(query.substr(1))) < 0.01))
-            return needleFull;
-
-        if (needle.starts_with(query))
-            return needleFull;
-    }
-
-    return "";
-}
-
-
-std::string Options::matchKey(const Entity& entity) const
-{
-    for (const auto& needle : entity | std::views::keys)
-    {
-        if (auto match = matchInList(needle, keys); !match.empty())
-            return match;
-    }
-
-    return "";
-}
-
-std::string Options::matchValue(const Entity& entity) const
-{
-    for (const auto& needle : entity | std::views::values)
-    {
-        if (auto match = matchValueInList(needle, values); !match.empty())
-            return match;
-    }
-
-    return "";
-}
-
 void Options::findGlobs()
 {
+    if (fs::is_directory(g_options.steamDir) && !fs::is_directory(g_options.steamCommonDir))
+    {
+        findGlobsInMapsDir(g_options.steamDir);
+        return;
+    }
+
     if (globalSearch)
         findAllMods();
     else

@@ -217,9 +217,3 @@ std::vector<std::string> splitString(const std::string& str, const char delimite
     }
     return segments;
 }
-
-void replaceToken(std::string& str, const std::string& token, const std::string& newValue)
-{
-    while (str.find(token) != std::string::npos)
-        str.replace(str.find(token), token.length(), newValue);
-}

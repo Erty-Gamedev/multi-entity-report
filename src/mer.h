@@ -82,10 +82,6 @@ struct Options
 
 	void findGlobs();
 	void checkMaps() const;
-	std::string matchInList(std::string needle, const std::vector<std::string>& haystack) const;
-	std::string  matchValueInList(std::string needle, const std::vector<std::string>& haystack) const;
-	std::string matchKey(const Entity& entity) const;
-	std::string matchValue(const Entity& entity) const;
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
 	void findGlobsInMod(const std::filesystem::path& modDir);
