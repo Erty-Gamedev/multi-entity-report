@@ -11,6 +11,7 @@
 
 namespace fs = std::filesystem;
 using namespace Styling;
+using namespace BSPFormat;
 static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
 Options g_options{};
@@ -132,8 +133,6 @@ void Options::findGlobs()
 
 void Options::checkMaps() const
 {
-    using namespace BSPFormat;
-
     std::cout << "\033[1E";
 
     for (const auto& glob : globs)
@@ -156,9 +155,6 @@ void Options::checkMaps() const
 
     std::cout << "\r\033[1F\033[0K" << std::endl;
 }
-
-
-using namespace BSPFormat;
 
 
 Bsp::Bsp(const std::filesystem::path& filepath) {
