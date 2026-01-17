@@ -162,6 +162,10 @@ static void handleArgs(const int argc, char* argv[])
         g_options.globalSearch = true;
 }
 
+extern "C" void signalHandler(int sig)
+{
+    g_receivedSignal.store(sig);
+}
 
 
 int main(const int argc, char* argv[])
@@ -170,8 +174,18 @@ int main(const int argc, char* argv[])
     logger.setLevel(Logging::LogLevel::LOG_ERROR);
 
     handleArgs(argc, argv);
+
+    /*
+      Use a custom handler to break checkMaps loop without stopping application completely,
+      that way we can report on the matches found so far if interrupted early.
+    */
+    std::signal(SIGINT, signalHandler);
+
     g_options.findGlobs();
     g_options.checkMaps();
+
+    // Return signal handler to default
+    std::signal(SIGINT, SIG_DFL);
 
     for (const auto& [map, entries] : g_options.entries)
     {

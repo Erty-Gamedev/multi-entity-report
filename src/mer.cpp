@@ -13,6 +13,7 @@ using namespace Styling;
 static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
 Options g_options{};
+std::atomic<int> g_receivedSignal = -1;
 
 
 void printUsage()
@@ -134,21 +135,27 @@ void Options::checkMaps() const
 {
     using namespace BSPFormat;
 
+    std::cout << "\033[1E";
+
     for (const auto& glob : globs)
     {
-        std::cout << "\r\033[0K" << "Reading " << glob.string();
+        std::cout << "\r\033[1F\033[0KReading " << glob.string() << "\nFound " << g_options.foundEntries;
 
         try { const Bsp reader{ glob }; }
         catch (const std::runtime_error& e)
         {
             if (logger.getLevel() > Logging::LogLevel::LOG_WARNING)
                 continue;
-            std::cerr << "\r\033[0K";
+            std::cerr << "\r\033[1F\033[0K";  // Insert before WARNING prefix by logger
             logger.warning("Could not read " + glob.string() + ". Reason: " + e.what());
+            std::cerr << "\033[1E";
         }
+
+        if ((g_receivedSignal != -1))
+            break;
     }
 
-    std::cout << "\r\033[0K" << std::endl;
+    std::cout << "\r\033[1F\033[0K" << std::endl;
 }
 
 
@@ -238,6 +245,7 @@ void Bsp::parse()
 
             matchEntry.targetname = entity.contains("targetname") ? entity.at("targetname") : "";
             g_options.entries.at(m_filepath).push_back(matchEntry);
+            ++g_options.foundEntries;
         }
     }
 }

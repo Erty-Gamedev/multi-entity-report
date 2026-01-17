@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <atomic>
+#include <csignal>
 #include <fstream>
 #include <unordered_map>
 #include <filesystem>
@@ -61,18 +63,8 @@ private:
 
 struct Options
 {
-	std::filesystem::path gamePath;
-	std::filesystem::path steamDir;
-	std::filesystem::path steamCommonDir;
-	std::vector<std::string> classnames;
-	std::vector<std::string> keys;
-	std::vector<std::string> values;
-	std::vector<std::string> mods;
-	std::vector<std::unique_ptr<Query>> queries;
-	std::vector<std::filesystem::path> globs;
-	std::vector<std::filesystem::path> modDirs;
-	std::unordered_map<std::filesystem::path, std::vector<EntityEntry>> entries;
 	unsigned int flags = 0;
+	unsigned int foundEntries = 0;
 	bool globalSearch = false;
 	bool flagsOr = false;
 	bool exact = false;
@@ -88,6 +80,7 @@ private:
 	void findAllMods();
 };
 extern Options g_options;
+extern std::atomic<int> g_receivedSignal;
 
 void printUsage();
 
