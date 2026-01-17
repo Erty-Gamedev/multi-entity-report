@@ -106,8 +106,11 @@ static inline std::filesystem::path userHome{ pw->pw_dir };
 static inline const std::filesystem::path c_defaultSteamDir = userHome / ".local/share/Steam";
 static inline const std::filesystem::path c_steamDirSnap = userHome / "snap/steam/common/.local/share/Steam";
 #endif
-std::filesystem::path getSteamDir()
+std::filesystem::path getSteamDir(bool reset)
 {
+    if (reset && g_configs.contains("steamdir"))
+        g_configs.erase("steamdir");
+
     if (g_configs.contains("steamdir"))
     {
         if (std::filesystem::is_directory(g_configs["steamdir"]))

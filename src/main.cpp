@@ -31,15 +31,12 @@ static void handleArgs(const int argc, char* argv[])
         }
     }
 
-    g_options.steamDir = getSteamDir();
-    g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
-
     int verbosity = 0;
 
     Query* currentQuery = nullptr;
     for (int i = 1; i < argc; ++i)
     {
-        if (strcmp(argv[i], "--case") == 0 || strcmp(argv[i], "-s") == 0)
+        if (strcmp(argv[i], "--case") == 0 || strcmp(argv[i], "-c") == 0)
         {
             g_options.caseSensitive = true;
             continue;
@@ -49,6 +46,24 @@ static void handleArgs(const int argc, char* argv[])
         {
             ++verbosity;
             continue;
+        }
+
+        if (strcmp(argv[i], "--steamdir") == 0 || strcmp(argv[i], "-s") == 0)
+        {
+            ++i;
+            if (i < argc)
+            {
+                if (std::filesystem::is_directory(argv[i]))
+                {
+                    g_options.steamDir = argv[i];
+                    continue;
+                }
+                logger.error("%s was not a directory", argv[i]);
+                exit(EXIT_FAILURE);
+            }
+
+            logger.error("Missing directory parameter for %s argument", argv[i - 1]);
+            exit(EXIT_FAILURE);
         }
 
 
@@ -73,6 +88,12 @@ static void handleArgs(const int argc, char* argv[])
         else
             g_options.mods.emplace_back(unSteampipe(argv[i]));
     }
+
+
+    if (g_options.steamDir.empty())
+        g_options.steamDir = getSteamDir();
+    g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
+
 
     if (verbosity > 2)
         logger.setLevel(Logging::LogLevel::LOG_DEBUG);
@@ -182,10 +203,35 @@ int main(const int argc, char* argv[])
     std::signal(SIGINT, signalHandler);
 
     g_options.findGlobs();
+
+    if (g_options.globs.empty())
+    {
+        std::cout << style(warning) << "No .bsp files were found.\n"
+            "Is '" << g_options.steamDir.string() << "' your Steam install directory? (y/N) " << style();
+        if (!confirm_dialogue(false))
+        {
+            g_options.steamDir = getSteamDir(true);
+            g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
+            g_options.findGlobs();
+        }
+    }
+
+    if (g_options.globs.empty())
+    {
+        std::cerr << style(warning) << "No .bsp files were found.\n" << style() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
     g_options.checkMaps();
 
     // Return signal handler to default
     std::signal(SIGINT, SIG_DFL);
+
+    if (g_options.entries.empty())
+    {
+        std::cout << "No matches were found, checked " << g_options.globs.size() << " .bsp files" << std::endl;
+        return EXIT_SUCCESS;
+    }
 
     for (const auto& [map, entries] : g_options.entries)
     {

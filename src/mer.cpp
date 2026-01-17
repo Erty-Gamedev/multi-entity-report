@@ -39,8 +39,9 @@ void printUsage()
            "  or </>/>=/<= for numeric comparisons.\n\n"
 
         << style(bold) << "OPTIONS\n" << style()
-        << "  --case       -s      make matches case sensitive\n"
+        << "  --case       -c      make matches case sensitive\n"
         << "  --help       -h      print this message and exit\n"
+        << "  --steamdir   -s      Steam or maps directory to use for this session\n"
         << "  --version            print application version and exit\n"
         << "  --verbose            enable verbose logging\n\n"
 
