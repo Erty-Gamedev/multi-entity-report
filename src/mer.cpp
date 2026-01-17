@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <filesystem>
+#include <string_view>
 #include <algorithm>
 #include <ranges>
 #include "logging.h"
@@ -49,18 +50,15 @@ void printUsage()
         << std::endl;
 }
 
-void Options::findGlobsInMod(const fs::path& modDir)
+void Options::findGlobsInMapsDir(const fs::path& mapsDir)
 {
-    if (!fs::is_directory(modDir / "maps"))
-        return;
-
-    for (const auto& entry : fs::directory_iterator(modDir / "maps"))
+    for (const auto& entry : fs::directory_iterator(mapsDir))
     {
         if (const fs::path& entryPath = entry.path(); toLowerCase(entryPath.extension().string()) == ".bsp")
         {
             fs::path shortGlob = entryPath.parent_path().parent_path().parent_path().stem()
                 / entryPath.parent_path().parent_path().stem() / entryPath.parent_path().stem() / entryPath.filename();
-            globs.push_back(shortGlob);
+            globs.insert(shortGlob);
         }
     }
 }
@@ -70,14 +68,14 @@ void Options::findGlobsInPipes(fs::path modDir)
     std::string baseMod = modDir.stem().string();
     gamePath = modDir.parent_path();
 
-    if (fs::is_directory(modDir))
-        findGlobsInMod(modDir);
+    if (fs::is_directory(modDir / "maps"))
+        findGlobsInMapsDir(modDir / "maps");
 
     for (const auto& pipe : c_SteamPipes)
     {
         modDir = gamePath / (baseMod + pipe);
-        if (fs::is_directory(modDir))
-            findGlobsInMod(modDir);
+        if (fs::is_directory(modDir / "maps"))
+            findGlobsInMapsDir(modDir / "maps");
     }
 }
 
@@ -123,7 +121,7 @@ void Options::findGlobs()
                 logger.warning("\"" + modDir.string() + "\" is not a directory");
                 continue;
             }
-            modDirs.push_back(modDir);
+            modDirs.push_back(std::move(modDir));
         }
     }
 
@@ -327,7 +325,7 @@ Entity Bsp::readEntity()
     return entity;
 }
 
-static std::string keyStartsWith(const Entity& entity, const std::string& prefix)
+static std::string keyStartsWith(const Entity& entity, const std::string_view& prefix)
 {
     for (const auto& key: entity | std::views::keys)
         if (!key.empty() && key.starts_with(prefix))
@@ -335,7 +333,7 @@ static std::string keyStartsWith(const Entity& entity, const std::string& prefix
     return "";
 }
 
-static std::string valueStartsWith(const Entity& entity, const std::string& prefix)
+static std::string valueStartsWith(const Entity& entity, const std::string_view& prefix)
 {
     for (const auto& [key, value] : entity)
         if (!value.empty() && value.starts_with(prefix))
@@ -343,13 +341,15 @@ static std::string valueStartsWith(const Entity& entity, const std::string& pref
     return "";
 }
 
-static bool isValueNumeric(const std::string& value, double& numeric)
+static bool isValueNumeric(const std::string_view& value, double& numeric)
 {
-    std::string valueTrimmed = value;
+    std::string valueTrimmed;
     if (const auto suffixPos = value.find('#'); suffixPos != std::string::npos)
         valueTrimmed = value.substr(0, suffixPos);
     else if (const auto suffixPos = value.find(' '); suffixPos != std::string::npos)
         valueTrimmed = value.substr(0, suffixPos);
+    else
+        valueTrimmed = std::string{ value };
 
     char* err;
     numeric = std::strtod(valueTrimmed.c_str(), &err);
@@ -362,7 +362,7 @@ static bool isValueNumeric(const std::string& value, double& numeric)
 
 
 
-Query::Query(const std::string& rawQuery)
+Query::Query(const std::string_view& rawQuery)
 {
     parse(rawQuery);
     if (!valid)
@@ -371,7 +371,7 @@ Query::Query(const std::string& rawQuery)
     valueIsNumeric = isValueNumeric(value, valueNumeric);
 }
 
-void Query::parse(const std::string& rawQuery)
+void Query::parse(const std::string_view& rawQuery)
 {
     if (size_t pos = rawQuery.find("=="); pos != std::string::npos)
     {

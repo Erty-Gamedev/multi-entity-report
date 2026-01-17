@@ -1,4 +1,5 @@
 #pragma once
+#include <set>
 #include <vector>
 #include <string>
 #include <atomic>
@@ -51,12 +52,12 @@ public:
 	int valueIndex = 0;
 	Query* next = nullptr;
 
-	Query(const std::string& rawQuery);
+	Query(const std::string_view& rawQuery);
 
 	EntityEntry testEntity(const Entity& entity, unsigned int index = 0u) const;
 	EntityEntry testChain(const Entity& entity, unsigned int index = 0u);
 private:
-	void parse(const std::string& rawQuery);
+	void parse(const std::string_view& rawQuery);
 	void checkIndexedKey();
 };
 
@@ -71,12 +72,20 @@ struct Options
 	bool caseSensitive = false;
 	bool interactiveMode = false;
 	Query* firstQuery;
+	std::vector<std::string> mods;
+	std::filesystem::path gamePath;
+	std::filesystem::path steamDir;
+	std::filesystem::path steamCommonDir;
+	std::set<std::filesystem::path> globs;
+	std::vector<std::unique_ptr<Query>> queries;
+	std::vector<std::filesystem::path> modDirs;
+	std::unordered_map<std::filesystem::path, std::vector<EntityEntry>> entries;
 
 	void findGlobs();
 	void checkMaps() const;
 private:
 	void findGlobsInPipes(std::filesystem::path modDir);
-	void findGlobsInMod(const std::filesystem::path& modDir);
+	void findGlobsInMapsDir(const std::filesystem::path& mapsDir);
 	void findAllMods();
 };
 extern Options g_options;
