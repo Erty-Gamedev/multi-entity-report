@@ -455,7 +455,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         if (key.empty() || !entity.contains(key))
             return entry;
 
-        auto parts = splitString(entity.at(key));
+        auto parts = splitString(entity.at(key), ' ');
         if (valueIndex > parts.size())
             return entry;
 
