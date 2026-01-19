@@ -17,7 +17,10 @@ project(${MER_PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-include_directories(PUBLIC "${PROJECT_SOURCE_DIR}/vendor/logging/src")
+include_directories(PUBLIC
+    "${PROJECT_SOURCE_DIR}/vendor/logging/src"
+    "${PROJECT_SOURCE_DIR}/vendor/doctest/doctest"
+)
 
 add_executable(${MER_PROJECT_NAME}
     src/main.cpp
@@ -25,4 +28,21 @@ add_executable(${MER_PROJECT_NAME}
     src/mer.h
     src/utils.cpp
     src/utils.h
+)
+
+set_target_properties(${MER_PROJECT_NAME} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "bin/debug"
+    RUNTIME_OUTPUT_DIRECTORY_DEBUG "bin/debug"
+    RUNTIME_OUTPUT_DIRECTORY_RELEASE "bin/release"
+)
+
+include_directories(tests
+    "${PROJECT_SOURCE_DIR}/src"
+)
+
+add_executable(tests
+    tests/main.cpp
+    tests/test_query.cpp
+    src/mer.cpp
+    src/utils.cpp
 )

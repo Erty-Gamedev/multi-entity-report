@@ -65,6 +65,7 @@ test/
 
 # Build
 out/
+bin/
 build/
 CMakeLists.txt.user
 CMakeCache.txt
