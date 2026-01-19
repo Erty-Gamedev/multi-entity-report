@@ -62,3 +62,8 @@ Comparison operators will do numeric comparisons as normal.
 
 You may also run the applications without any arguments,
 in which case it will start interactive mode.
+
+## Special thanks
+
+Many thanks goes out to RaptorSKA for helping out with testing
+and providing valuable feedback!
