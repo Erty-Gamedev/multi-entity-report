@@ -2,6 +2,7 @@
 #include <vector>
 #include <filesystem>
 #include <string_view>
+#include <source_location>
 #include <algorithm>
 #include <ranges>
 #include "logging.h"
@@ -142,11 +143,11 @@ void Options::checkMaps() const
         try { const Bsp reader{ glob }; }
         catch (const std::runtime_error& e)
         {
-            if (logger.getLevel() > Logging::LogLevel::LOG_WARNING)
+            if (logger.getLevel() > Logging::LogLevel::Warning)
                 continue;
             std::cerr << "\r\033[1F\033[0K";  // Insert before WARNING prefix by logger
-            logger.warning("Could not read " + glob.string() + ". Reason: " + e.what());
-            std::cerr << "\033[1E";
+            logger.warning("Could not read " + glob.string() + ". Reason: " + e.what(), std::source_location());
+            std::cerr << std::endl;
         }
 
         if ((g_receivedSignal != -1))
@@ -168,7 +169,7 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
 
     m_file.read(reinterpret_cast<char*>(&m_header), sizeof(BspHeader));
 
-    if (m_header.version != 30 && m_header.version != 29)
+    if (m_header.version != 30 /*&& m_header.version != 29*/)
         throw std::runtime_error("Unexpected BSP version: " + style(info) + std::to_string(m_header.version) + style());
 
     parse();

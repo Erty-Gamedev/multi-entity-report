@@ -96,11 +96,11 @@ static void handleArgs(const int argc, char* argv[])
 
 
     if (verbosity > 2)
-        logger.setLevel(Logging::LogLevel::LOG_DEBUG);
+        logger.setLevel(Logging::LogLevel::Debug);
     else if (verbosity > 1)
-        logger.setLevel(Logging::LogLevel::LOG_LOG);
+        logger.setLevel(Logging::LogLevel::Log);
     else if (verbosity > 0)
-        logger.setLevel(Logging::LogLevel::LOG_WARNING);
+        logger.setLevel(Logging::LogLevel::Warning);
 
 
     if (g_options.queries.empty())
@@ -136,7 +136,7 @@ static void handleArgs(const int argc, char* argv[])
             "Keys with multiple space-separated values can be indexed with square brackets,\n"
             "e.g.: origin[1] to query the second value.\n"
             "Queries are implicitly or-chained. Use the AND keyword to and-chain queries.\nExample: "
-            << style(brightBlack) << "classname=monster AND =argument origin[2]<200\n" << style(info)
+            << style(brightBlack) << "classname=monster AND =argument AND origin[2]<200\n" << style(info)
             << "Enter search queries: " << style();
 
         std::getline(std::cin, buffer);
@@ -192,7 +192,7 @@ extern "C" void signalHandler(int sig)
 int main(const int argc, char* argv[])
 {
     logger.setFileHandler(nullptr);
-    logger.setLevel(Logging::LogLevel::LOG_ERROR);
+    logger.setLevel(Logging::LogLevel::Error);
 
     handleArgs(argc, argv);
 
@@ -222,6 +222,7 @@ int main(const int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
+    std::cout << std::endl;
     g_options.checkMaps();
 
     // Return signal handler to default
