@@ -15,6 +15,9 @@ using namespace Styling;
 using namespace BSPFormat;
 static inline Logging::Logger& logger = Logging::Logger::getLogger("mer");
 
+// Return, clear line, previous line, clear line
+static const char* c_resetTwoLines = "\r\033[0K\033[1F\033[0K";
+
 Options g_options{};
 std::atomic<int> g_receivedSignal = -1;
 
@@ -59,6 +62,12 @@ void Options::findGlobsInMapsDir(const fs::path& mapsDir)
     {
         if (const fs::path& entryPath = entry.path(); toLowerCase(entryPath.extension().string()) == ".bsp")
         {
+            if (g_options.absoluteDir)
+            {
+                globs.insert(entryPath);
+                continue;
+            }
+
             fs::path shortGlob = entryPath.parent_path().parent_path().parent_path().stem()
                 / entryPath.parent_path().parent_path().stem() / entryPath.parent_path().stem() / entryPath.filename();
             globs.insert(shortGlob);
@@ -103,6 +112,7 @@ void Options::findGlobs()
 {
     if (fs::is_directory(g_options.steamDir) && !fs::is_directory(g_options.steamCommonDir))
     {
+        g_options.absoluteDir = true;
         findGlobsInMapsDir(g_options.steamDir);
         return;
     }
@@ -134,27 +144,27 @@ void Options::findGlobs()
 
 void Options::checkMaps() const
 {
-    std::cout << "\033[1E";
-
     for (const auto& glob : globs)
     {
-        std::cout << "\r\033[1F\033[0KReading " << glob.string() << "\nFound " << g_options.foundEntries;
+        std::cout << "Reading "
+            << (g_options.absoluteDir ? glob.filename() : glob).string() << "\nFound " << g_options.foundEntries;
 
         try { const Bsp reader{ glob }; }
         catch (const std::runtime_error& e)
         {
             if (logger.getLevel() > Logging::LogLevel::Warning)
                 continue;
-            std::cerr << "\r\033[1F\033[0K";  // Insert before WARNING prefix by logger
+
+            std::cerr << c_resetTwoLines;  // Insert before WARNING prefix by logger
             logger.warning("Could not read " + glob.string() + ". Reason: " + e.what(), std::source_location());
-            std::cerr << std::endl;
+            continue;
         }
 
         if ((g_receivedSignal != -1))
             break;
-    }
 
-    std::cout << "\r\033[1F\033[0K" << std::endl;
+        std::cout << c_resetTwoLines;
+    }
 }
 
 
@@ -169,7 +179,7 @@ Bsp::Bsp(const std::filesystem::path& filepath) {
 
     m_file.read(reinterpret_cast<char*>(&m_header), sizeof(BspHeader));
 
-    if (m_header.version != 30 /*&& m_header.version != 29*/)
+    if (m_header.version != 30 && m_header.version != 29)
         throw std::runtime_error("Unexpected BSP version: " + style(info) + std::to_string(m_header.version) + style());
 
     parse();

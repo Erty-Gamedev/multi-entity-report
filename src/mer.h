@@ -71,6 +71,7 @@ struct Options
 	bool exact = false;
 	bool caseSensitive = false;
 	bool interactiveMode = false;
+	bool absoluteDir = false;
 	Query* firstQuery;
 	std::vector<std::string> mods;
 	std::filesystem::path gamePath;

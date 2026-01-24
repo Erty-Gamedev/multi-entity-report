@@ -92,7 +92,9 @@ static void handleArgs(const int argc, char* argv[])
 
     if (g_options.steamDir.empty())
         g_options.steamDir = getSteamDir();
-    g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
+
+    if (std::filesystem::is_directory(g_options.steamDir / "steamapps/common"))
+        g_options.steamCommonDir = g_options.steamDir / "steamapps/common";
 
 
     if (verbosity > 2)
@@ -222,7 +224,6 @@ int main(const int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    std::cout << std::endl;
     g_options.checkMaps();
 
     // Return signal handler to default
@@ -234,9 +235,10 @@ int main(const int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
+    std::cout << "Number of matches found: " << g_options.foundEntries << '\n' << std::endl;
     for (const auto& [map, entries] : g_options.entries)
     {
-        std::cout << map.string() << ": [\n";
+        std::cout << (g_options.absoluteDir ? map.filename() : map).string() << ": [\n";
 
         for (const auto&[index, flags, classname, targetname, key, value, queryMatches, matched] : entries)
         {
