@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <cstring>
 #include "logging.h"
 #include "utils.h"
@@ -236,11 +237,22 @@ int main(const int argc, char* argv[])
     }
 
     std::cout << "Number of matches found: " << g_options.foundEntries << '\n' << std::endl;
-    for (const auto& [map, entries] : g_options.entries)
+
+
+    // Flatten to vector and sort our entries by map name
+    std::vector<std::pair<std::filesystem::path, std::vector<EntityEntry>>> entEntries;
+    entEntries.reserve(g_options.entries.size());
+    for (auto& [map, entries] : g_options.entries)
+        entEntries.push_back({ map, std::move(entries) });
+
+    std::ranges::sort(entEntries, [](const auto& a, const auto& b) { return a.first < b.first; });
+
+
+    for (const auto& [map, entries] : entEntries)
     {
         std::cout << (g_options.absoluteDir ? map.filename() : map).string() << ": [\n";
 
-        for (const auto&[index, flags, classname, targetname, key, value, queryMatches, matched] : entries)
+        for (const auto& [index, flags, classname, targetname, key, value, queryMatches, matched] : entries)
         {
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())
