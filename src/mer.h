@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <atomic>
-#include <csignal>
 #include <fstream>
 #include <unordered_map>
 #include <filesystem>
@@ -48,14 +47,14 @@ public:
 	QueryOperator op = QueryEquals;
 	unsigned int flags = 0u;
 	std::string key, value;
-	double valueNumeric;
+	double valueNumeric = 0.;
 	int valueIndex = 0;
 	Query* next = nullptr;
 
-	Query(const std::string_view& rawQuery);
+	explicit Query(const std::string_view& rawQuery);
 
-	EntityEntry testEntity(const Entity& entity, unsigned int index = 0u) const;
-	EntityEntry testChain(const Entity& entity, unsigned int index = 0u);
+	[[nodiscard]] EntityEntry testEntity(const Entity& entity, unsigned int index = 0u) const;
+	[[nodiscard]] EntityEntry testChain(const Entity& entity, unsigned int index = 0u) const;
 private:
 	void parse(const std::string_view& rawQuery);
 	void checkIndexedKey();

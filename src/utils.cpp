@@ -36,7 +36,7 @@ static inline const std::filesystem::path c_exedir = getExeDir();
 static inline const std::filesystem::path configFilePath = c_exedir / "mer.conf";
 
 
-static inline std::unordered_map<std::string, std::string> readConfigFile()
+static std::unordered_map<std::string, std::string> readConfigFile()
 {
     std::unordered_map<std::string, std::string> config;
 
@@ -80,7 +80,7 @@ static inline std::unordered_map<std::string, std::string> readConfigFile()
 }
 static inline std::unordered_map<std::string, std::string> g_configs = readConfigFile();
 
-static inline bool saveConfigFile()
+static bool saveConfigFile()
 {
     std::ofstream file;
     file.open(configFilePath);
@@ -101,14 +101,14 @@ static inline bool saveConfigFile()
 #ifdef _WIN32
 static inline const std::filesystem::path c_defaultSteamDir = "C:/Program Files (x86)/Steam";
 #else
-struct passwd *pw = getpwuid(getuid());
+passwd *pw = getpwuid(getuid());
 static inline std::filesystem::path userHome{ pw->pw_dir };
 static inline const std::filesystem::path c_defaultSteamDir = userHome / ".local/share/Steam";
 static inline const std::filesystem::path c_steamDirSnap = userHome / "snap/steam/common/.local/share/Steam";
 #endif
-std::filesystem::path getSteamDir(bool reset)
+std::filesystem::path getSteamDir(const bool resetConfig)
 {
-    if (reset && g_configs.contains("steamdir"))
+    if (resetConfig && g_configs.contains("steamdir"))
         g_configs.erase("steamdir");
 
     if (g_configs.contains("steamdir"))

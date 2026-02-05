@@ -9,7 +9,7 @@ static inline const std::array<std::string, 3> c_SteamPipes{
 	"_addon", "_hd", "_downloads"
 };
 
-std::filesystem::path getSteamDir(bool reset = false);
+std::filesystem::path getSteamDir(bool resetConfig = false);
 
 bool confirm_dialogue(bool yesDefault = true);
 

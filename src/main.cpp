@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cstring>
+#include <csignal>
 #include "logging.h"
 #include "utils.h"
 #include "mer.h"
@@ -77,8 +78,7 @@ static void handleArgs(const int argc, char* argv[])
         }
 
 
-        std::unique_ptr<Query> query = std::make_unique<Query>(argv[i]);
-        if (query->valid)
+        if (auto query = std::make_unique<Query>(argv[i]); query->valid)
         {
             g_options.queries.push_back(std::move(query));
             Query* newQuery = g_options.queries.back().get();
@@ -243,7 +243,7 @@ int main(const int argc, char* argv[])
     std::vector<std::pair<std::filesystem::path, std::vector<EntityEntry>>> entEntries;
     entEntries.reserve(g_options.entries.size());
     for (auto& [map, entries] : g_options.entries)
-        entEntries.push_back({ map, std::move(entries) });
+        entEntries.emplace_back( map, std::move(entries) );
 
     std::ranges::sort(entEntries, [](const auto& a, const auto& b) { return a.first < b.first; });
 

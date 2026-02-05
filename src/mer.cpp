@@ -352,9 +352,9 @@ static std::string valueStartsWith(const Entity& entity, const std::string_view&
 static bool isValueNumeric(const std::string_view& value, double& numeric)
 {
     std::string valueTrimmed;
-    if (const auto suffixPos = value.find('#'); suffixPos != std::string::npos)
+    if (size_t suffixPos = value.find('#'); suffixPos != std::string::npos)
         valueTrimmed = value.substr(0, suffixPos);
-    else if (const auto suffixPos = value.find(' '); suffixPos != std::string::npos)
+    else if (suffixPos = value.find(' '); suffixPos != std::string::npos)
         valueTrimmed = value.substr(0, suffixPos);
     else
         valueTrimmed = std::string{ value };
@@ -369,7 +369,6 @@ static bool isValueNumeric(const std::string_view& value, double& numeric)
 }
 
 
-
 Query::Query(const std::string_view& rawQuery)
 {
     parse(rawQuery);
@@ -381,49 +380,49 @@ Query::Query(const std::string_view& rawQuery)
 
 void Query::parse(const std::string_view& rawQuery)
 {
-    if (size_t pos = rawQuery.find("=="); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find("=="); pos != std::string::npos)
     {
         op = QueryExact;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 2);
         return;
     }
-    if (size_t pos = rawQuery.find("<="); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find("<="); pos != std::string::npos)
     {
         op = QueryLessEquals;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 2);
         return;
     }
-    if (size_t pos = rawQuery.find(">="); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find(">="); pos != std::string::npos)
     {
         op = QueryGreaterEquals;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 2);
         return;
     }
-    if (size_t pos = rawQuery.find("!="); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find("!="); pos != std::string::npos)
     {
         op = QueryNotEquals;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 2);
         return;
     }
-    if (size_t pos = rawQuery.find("="); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find('='); pos != std::string::npos)
     {
         op = QueryEquals;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 1);
         return;
     }
-    if (size_t pos = rawQuery.find("<"); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find('<'); pos != std::string::npos)
     {
         op = QueryLess;
         key = rawQuery.substr(0, pos);
         value = rawQuery.substr(pos + 1);
         return;
     }
-    if (size_t pos = rawQuery.find(">"); pos != std::string::npos)
+    if (const size_t pos = rawQuery.find('>'); pos != std::string::npos)
     {
         op = QueryGreater;
         key = rawQuery.substr(0, pos);
@@ -513,8 +512,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryGreater:
         {
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
             {
                 entry.key = key;
                 entry.value = needle;
@@ -526,8 +524,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryLess:
         {
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
             {
                 entry.key = key;
                 entry.value = needle;
@@ -539,8 +536,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryGreaterEquals:
         {
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
             {
                 entry.key = key;
                 entry.value = needle;
@@ -552,8 +548,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryLessEquals:
         {
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
             {
                 entry.key = key;
                 entry.value = needle;
@@ -571,13 +566,12 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
 
     if (key == "spawnflags" && valueIsNumeric && entity.contains(key))
     {
-        unsigned int valueUInt = static_cast<unsigned int>(valueNumeric);
+        auto valueUInt = static_cast<unsigned int>(valueNumeric);
         if (unsigned int spawnflags = std::atoi(entity.at(key).c_str()); spawnflags > 0)
         {
             switch (op)
             {
             case QueryEquals:
-            {
                 if (spawnflags & valueUInt)
                 {
                     entry.queryMatches = key + '=' + entity.at(key);
@@ -585,9 +579,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
                     return entry;
                 }
                 break;
-            }
             case QueryNotEquals:
-            {
                 if ((spawnflags & valueUInt) == 0)
                 {
                     entry.queryMatches = key + "!=" + value;
@@ -595,9 +587,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
                     return entry;
                 }
                 break;
-            }
             case QueryExact:
-            {
                 if ((spawnflags & valueUInt) == valueUInt)
                 {
                     entry.queryMatches = key + '=' + entity.at(key);
@@ -605,7 +595,38 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
                     return entry;
                 }
                 break;
-            }
+            case QueryGreater:
+                if (spawnflags > valueUInt)
+                {
+                    entry.queryMatches = key + ">" + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            case QueryLess:
+                if (spawnflags < valueUInt)
+                {
+                    entry.queryMatches = key + "<" + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            case QueryGreaterEquals:
+                if (spawnflags >= valueUInt)
+                {
+                    entry.queryMatches = key + ">=" + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
+            case QueryLessEquals:
+                if (spawnflags <= valueUInt)
+                {
+                    entry.queryMatches = key + "<=" + entity.at(key);
+                    entry.matched = true;
+                    return entry;
+                }
+                break;
             }
         }
 
@@ -641,7 +662,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
 
             break;
         }
-        else if (!value.empty())
+        if (!value.empty())
         {
             if (const std::string& needle = valueStartsWith(entity, value); !needle.empty())
             {
@@ -672,7 +693,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
             }
             break;
         }
-        else if (!value.empty())
+        if (!value.empty())
         {
             if (valueStartsWith(entity, value).empty())
             {
@@ -735,8 +756,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             entry.key = key;
 
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum > valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum > valueNumeric)
             {
                 entry.value = entity.at(key);
                 entry.queryMatches = entry.key + '=' + entry.value;
@@ -748,8 +768,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             for (const auto& [needleKey, needle] : entity)
             {
-                double needleNum;
-                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
+                if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
                 {
                     entry.key = needleKey;
                     entry.value = needle;
@@ -772,8 +791,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             entry.key = key;
 
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum < valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum < valueNumeric)
             {
                 entry.value = entity.at(key);
                 entry.queryMatches = entry.key + '=' + entry.value;
@@ -785,8 +803,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             for (const auto& [needleKey, needle] : entity)
             {
-                double needleNum;
-                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
+                if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
                 {
                     entry.key = needleKey;
                     entry.value = needle;
@@ -822,8 +839,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             for (const auto& [needleKey, needle] : entity)
             {
-                double needleNum;
-                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
+                if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
                 {
                     entry.key = needleKey;
                     entry.value = needle;
@@ -846,8 +862,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             entry.key = key;
 
-            double needleNum;
-            if (valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum <= valueNumeric)
+            if (double needleNum; valueIsNumeric && isValueNumeric(entity.at(key), needleNum) && needleNum <= valueNumeric)
             {
                 entry.value = entity.at(key);
                 entry.queryMatches = entry.key + '=' + entry.value;
@@ -859,8 +874,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
             for (const auto& [needleKey, needle] : entity)
             {
-                double needleNum;
-                if (valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
+                if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
                 {
                     entry.key = needleKey;
                     entry.value = needle;
@@ -879,7 +893,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
 }
 
 
-EntityEntry Query::testChain(const Entity& entity, unsigned int index)
+EntityEntry Query::testChain(const Entity& entity, unsigned int index) const
 {
     EntityEntry entry = testEntity(entity, index);
 
@@ -890,8 +904,7 @@ EntityEntry Query::testChain(const Entity& entity, unsigned int index)
             if (!entry.matched)
                 return entry;
 
-            EntityEntry nextEntry = next->testChain(entity);
-            if (nextEntry.matched)
+            if (EntityEntry nextEntry = next->testChain(entity); nextEntry.matched)
             {
                 if (!nextEntry.queryMatches.empty())
                     entry.queryMatches.append(" AND " + nextEntry.queryMatches);
@@ -906,9 +919,7 @@ EntityEntry Query::testChain(const Entity& entity, unsigned int index)
         }
         if (!entry.matched && type == QueryOr)
         {
-            EntityEntry nextEntry = next->testChain(entity);
-
-            if (nextEntry.matched)
+            if (EntityEntry nextEntry = next->testChain(entity); nextEntry.matched)
             {
                 entry.matched = true;
 
