@@ -138,6 +138,22 @@ TEST_SUITE("query match")
 			CHECK(entry.queryMatches == "origin[1]!=0");
 		}
 
+		SUBCASE("match missing element")
+		{
+			Query query{ "renderamt[1]=''" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "renderamt[1]=\"\"");
+		}
+
+		SUBCASE("match non-empty element")
+		{
+			Query query{ "origin[2]!=''" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "origin[2]!=\"\"");
+		}
+
 		SUBCASE("do not match classname")
 		{
 			Query query{ "classname!=weapon" };
@@ -216,6 +232,14 @@ TEST_SUITE("query match")
 			CHECK(entry.queryMatches == "origin[2]=128");
 		}
 
+		SUBCASE("match empty is greater than negative")
+		{
+			Query query{ "renderamt[2]>-5" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "renderamt[2]>-5");
+		}
+
 		SUBCASE("match any value greater than")
 		{
 			Query query{ ">96" };
@@ -241,6 +265,14 @@ TEST_SUITE("query match")
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
 			CHECK(entry.queryMatches == "origin[1]=-64");
+		}
+
+		SUBCASE("match empty is less than 5")
+		{
+			Query query{ "renderamt[1]<5" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "renderamt[1]<5");
 		}
 
 		SUBCASE("match any value less than")
@@ -270,6 +302,14 @@ TEST_SUITE("query match")
 			CHECK(entry.queryMatches == "origin[2]=128");
 		}
 
+		SUBCASE("match empty is greater or equal to zero")
+		{
+			Query query{ "renderamt[2]>=0" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "renderamt[2]>=0");
+		}
+
 		SUBCASE("match any value greater or equal than")
 		{
 			Query query{ ">=96" };
@@ -295,6 +335,14 @@ TEST_SUITE("query match")
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
 			CHECK(entry.queryMatches == "origin[1]=-64");
+		}
+
+		SUBCASE("match empty is less or equal than 5")
+		{
+			Query query{ "renderamt[1]<=5" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "renderamt[1]<=5");
 		}
 
 		SUBCASE("match any value less or equal than")

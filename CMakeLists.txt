@@ -5,7 +5,7 @@ set(MER_PROJECT_DESCRIPTION  "'Entity Report'-like search for an entire GoldSrc 
 set(MER_AUTHOR_DOMAIN        "https://github.com/erty-gamedev/multi-entity-report")
 set(MER_AUTHOR_MAINTAINER    "erty.gamedev@gmail.com")
 set(MER_VERSION_MAJOR        "1")
-set(MER_VERSION_MINOR        "1")
+set(MER_VERSION_MINOR        "2")
 set(MER_VERSION_PATCH        "0")
 set(MER_VERSION              "${MER_VERSION_MAJOR}.${MER_VERSION_MINOR}.${MER_VERSION_PATCH}")
 set(MER_NAME_VERSION         "Multi Entity Report v${MER_VERSION}")

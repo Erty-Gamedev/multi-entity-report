@@ -463,11 +463,11 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
             return entry;
 
         auto parts = splitString(entity.at(key), ' ');
-        if (valueIndex > parts.size())
-            return entry;
 
         std::string needle;
-        if (valueIndex < 0)
+        if (valueIndex > (parts.size() - 1))
+            needle = "";
+        else if (valueIndex < 0)
             needle = parts[parts.size() + (valueIndex % parts.size())];
         else
             needle = parts[valueIndex];
@@ -476,6 +476,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
         case QueryEquals:
         {
+            if (value == "''" && needle.empty())
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]=\"\"";
+                entry.matched = true;
+                return entry;
+            }
             if (needle.starts_with(value))
             {
                 entry.key = key;
@@ -488,6 +496,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryNotEquals:
         {
+            if (value == "''" && !needle.empty())
+            {
+                entry.key = key;
+                entry.value = '!' + value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]!=\"\"";
+                entry.matched = true;
+                return entry;
+            }
             if (needle != value)
             {
                 entry.key = key;
@@ -500,6 +516,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryExact:
         {
+            if (value == "''" && needle.empty())
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]==\"\"";
+                entry.matched = true;
+                return entry;
+            }
             if (needle == value)
             {
                 entry.key = key;
@@ -512,6 +536,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryGreater:
         {
+            if (needle.empty() && valueIsNumeric && 0. > valueNumeric)
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]>" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
             if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum > valueNumeric)
             {
                 entry.key = key;
@@ -524,6 +556,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryLess:
         {
+            if (needle.empty() && valueIsNumeric && 0. < valueNumeric)
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]<" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
             if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum < valueNumeric)
             {
                 entry.key = key;
@@ -536,6 +576,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryGreaterEquals:
         {
+            if (needle.empty() && valueIsNumeric && 0. >= valueNumeric)
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]>=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
             if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum >= valueNumeric)
             {
                 entry.key = key;
@@ -548,6 +596,14 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryLessEquals:
         {
+            if (needle.empty() && valueIsNumeric && 0. <= valueNumeric)
+            {
+                entry.key = key;
+                entry.value = value;
+                entry.queryMatches = entry.key + '[' + std::to_string(valueIndex) + "]<=" + entry.value;
+                entry.matched = true;
+                return entry;
+            }
             if (double needleNum; valueIsNumeric && isValueNumeric(needle, needleNum) && needleNum <= valueNumeric)
             {
                 entry.key = key;

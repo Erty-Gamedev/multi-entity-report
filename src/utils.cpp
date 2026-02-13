@@ -16,7 +16,11 @@
 using namespace Styling;
 
 
-static std::filesystem::path getExeDir()
+#ifdef _WIN32
+#include <vector>
+#include <Windows.h>
+#endif
+static inline const std::filesystem::path c_exedir = ([]()
 {
 #ifdef _WIN32
     std::vector<wchar_t> pathBuffer;
@@ -31,8 +35,7 @@ static std::filesystem::path getExeDir()
 #else
     return std::filesystem::canonical("/proc/self/exe").parent_path();
 #endif
-}
-static inline const std::filesystem::path c_exedir = getExeDir();
+})();
 static inline const std::filesystem::path configFilePath = c_exedir / "mer.conf";
 
 
