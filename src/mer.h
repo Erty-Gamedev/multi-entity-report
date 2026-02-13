@@ -24,6 +24,8 @@ using Entity = std::unordered_map<std::string, std::string>;
 class Query
 {
 public:
+	static constexpr std::string c_empty{ "%" };
+
 	enum QueryType
 	{
 		QueryOr,

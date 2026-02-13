@@ -6,6 +6,7 @@ static const Entity entity{
 	{ "classname", "monster_gman" },
 	{ "targetname", "argumentg" },
 	{ "origin", "32 -64 128" },
+	{ "angles", "45 0 0" },
 	{ "renderamt", "255" },
 	{ "sc_mm_value_hash", "0.1#1" },
 	{ "spawnflags", "19"}  // WaitTillSeen 1 | Gag 2 | Prisoner 16 = 19
@@ -140,15 +141,31 @@ TEST_SUITE("query match")
 
 		SUBCASE("match missing element")
 		{
-			Query query{ "renderamt[1]=''" };
+			Query query{ "renderamt[1]=" + Query::c_empty };
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
 			CHECK(entry.queryMatches == "renderamt[1]=\"\"");
 		}
 
+		SUBCASE("non-empty element do not match empty value")
+		{
+			Query query{ "origin[2]=" + Query::c_empty };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == false);
+			CHECK(entry.queryMatches == "");
+		}
+
+		SUBCASE("zero element do not match empty value")
+		{
+			Query query{ "angles[1]=" + Query::c_empty };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == false);
+			CHECK(entry.queryMatches == "");
+		}
+
 		SUBCASE("match non-empty element")
 		{
-			Query query{ "origin[2]!=''" };
+			Query query{ "origin[2]!=" + Query::c_empty };
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
 			CHECK(entry.queryMatches == "origin[2]!=\"\"");

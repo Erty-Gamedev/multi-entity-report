@@ -476,7 +476,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         {
         case QueryEquals:
         {
-            if (value == "''" && needle.empty())
+            if (value == c_empty && needle.empty())
             {
                 entry.key = key;
                 entry.value = value;
@@ -496,7 +496,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryNotEquals:
         {
-            if (value == "''" && !needle.empty())
+            if (value == c_empty && !needle.empty())
             {
                 entry.key = key;
                 entry.value = '!' + value;
@@ -516,7 +516,7 @@ EntityEntry Query::testEntity(const Entity& entity, unsigned int index) const
         }
         case QueryExact:
         {
-            if (value == "''" && needle.empty())
+            if (value == c_empty && needle.empty())
             {
                 entry.key = key;
                 entry.value = value;

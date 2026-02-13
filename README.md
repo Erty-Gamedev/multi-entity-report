@@ -34,7 +34,7 @@ Other operators can be used instead of `=` to affect the behavior of the query:
 | <=         | Numeric less or equal to comparison       |
 | >=         | Numeric greater or equal to comparison    |
 
-To query an empty value use double single quotes (`''`), e.g. `angles[1]=''`
+To query an empty value use a percentage sign (`%`), e.g. `angles[1]=%`
 
 ### Example
 
