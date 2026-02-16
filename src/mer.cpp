@@ -154,7 +154,10 @@ void Options::checkMaps() const
         catch (const std::runtime_error& e)
         {
             if (logger.getLevel() > Logging::LogLevel::Warning)
+            {
+                std::cout << c_resetTwoLines;
                 continue;
+            }
 
             std::cerr << c_resetTwoLines;  // Insert before WARNING prefix by logger
             logger.warning("Could not read " + glob.string() + ". Reason: " + e.what(), std::source_location());
