@@ -71,6 +71,42 @@ TEST_SUITE("query parse")
 		CHECK(query.op == Query::QueryEquals);
 	}
 
+	TEST_CASE("parse value with asterisk")
+	{
+		Query query{ "key=*value" };
+
+		CHECK(query.key == "key");
+		CHECK(query.value == "*value");
+		CHECK(query.op == Query::QueryEquals);
+	}
+
+	TEST_CASE("parse value with two asterisks")
+	{
+		Query query{ "key=*value*" };
+
+		CHECK(query.key == "key");
+		CHECK(query.value == "*value*");
+		CHECK(query.op == Query::QueryEquals);
+	}
+
+	TEST_CASE("parse value ends with asterisk")
+	{
+		Query query{ "key=value*" };
+
+		CHECK(query.key == "key");
+		CHECK(query.value == "value");
+		CHECK(query.op == Query::QueryEquals);
+	}
+
+	TEST_CASE("parse double asterisk")
+	{
+		Query query{ "key=**" };
+
+		CHECK(query.key == "key");
+		CHECK(query.valid == false);
+		CHECK(query.op == Query::QueryEquals);
+	}
+
 	TEST_CASE("parse mod")
 	{
 		Query query{ "valve" };
@@ -186,6 +222,31 @@ TEST_SUITE("query match")
 			CHECK(entry.matched == false);
 			CHECK(entry.queryMatches == "");
 		}
+
+		SUBCASE("value ends with")
+		{
+			Query query{ "=*gman" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "classname=monster_gman");
+		}
+
+		SUBCASE("value contains")
+		{
+			Query query{ "=*umen*" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == true);
+			CHECK(entry.queryMatches == "targetname=argumentg");
+		}
+
+		SUBCASE("value does not contain")
+		{
+			Query query{ "=*fold*" };
+			EntityEntry entry = query.testEntity(entity);
+			CHECK(entry.matched == false);
+			CHECK(entry.queryMatches == "");
+		}
+
 	}
 
 	TEST_CASE("match exact equals")

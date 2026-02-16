@@ -26,7 +26,7 @@ Other operators can be used instead of `=` to affect the behavior of the query:
 
 | Operator   | Description                               |
 | ---------- | ----------------------------------------- |
-| =          | Match key/value starting with these terms |
+| =          | Partial match key/value with these terms  |
 | ==         | Match only exact key/value                |
 | !=         | Match key/value that isn't these terms    |
 | <          | Numeric less than comparison              |
@@ -49,6 +49,14 @@ Half-Life\valve\maps\c1a0.bsp: [
   monster_gman (index 55, targetname 'argumentg', classname=monster_gman AND targetname=argumentg)
 ]
 ```
+
+### Wildcards
+
+Asterisk (`*`) characters can be used as wildcards to change the
+partial match operator (`=`) from its default *starts with* behavior
+to checking if a value *ends with* the search term (asterisk at the 
+end of the term, e.g. `=*rockgibs.mdl`) or *contains* the search term
+(asterisk at beginning and end of the term, e.g. `=*duck*`).
 
 ### Spawnflags
 

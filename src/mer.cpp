@@ -345,10 +345,26 @@ static std::string keyStartsWith(const Entity& entity, const std::string_view& p
     return "";
 }
 
+static bool partialMatch(const std::string_view& str, const std::string_view& search)
+{
+    if (str.empty())
+        return false;
+
+    // Using wildcard
+    if (search.front() == '*')
+    {
+        bool contains = search.back() == '*';
+        const std::string_view subStr = contains ? search.substr(1, search.size() - 2) : search.substr(1);
+        return contains ? str.find(subStr) != std::string::npos : str.ends_with(subStr);
+    }
+
+    return str.starts_with(search);
+}
+
 static std::string valueStartsWith(const Entity& entity, const std::string_view& prefix)
 {
     for (const auto& [key, value] : entity)
-        if (!value.empty() && value.starts_with(prefix))
+        if (partialMatch(value, prefix))
             return key;
     return "";
 }
@@ -376,8 +392,17 @@ static bool isValueNumeric(const std::string_view& value, double& numeric)
 Query::Query(const std::string_view& rawQuery)
 {
     parse(rawQuery);
+
+    if (value == "**")
+        valid = false;
+
     if (!valid)
         return;
+
+    // Asterisk at the end any none at front has no effect on behavior
+    if (!value.empty() && value.back() == '*' && value.front() != '*')
+        value.pop_back();
+
     checkIndexedKey();
     valueIsNumeric = isValueNumeric(value, valueNumeric);
 }
