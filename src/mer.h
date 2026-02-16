@@ -13,7 +13,7 @@ struct EntityEntry
 {
 	unsigned int index;
 	unsigned int flags = 0;
-	std::string classname, targetname, key, value;
+	std::string classname, targetname;
 	std::string queryMatches;
 	bool matched = false;
 };
@@ -24,7 +24,7 @@ using Entity = std::unordered_map<std::string, std::string>;
 class Query
 {
 public:
-	static constexpr std::string c_empty{ "%" };
+	static inline const std::string c_empty = "%";
 
 	enum QueryType
 	{

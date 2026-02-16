@@ -136,7 +136,7 @@ TEST_SUITE("query match")
 			Query query{ "origin[1]!=0" };
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
-			CHECK(entry.queryMatches == "origin[1]!=0");
+			CHECK(entry.queryMatches == "origin[1]!=0 (32 -64 128)");
 		}
 
 		SUBCASE("match missing element")
@@ -176,7 +176,7 @@ TEST_SUITE("query match")
 			Query query{ "classname!=weapon" };
 			EntityEntry entry = query.testEntity(entity);
 			CHECK(entry.matched == true);
-			CHECK(entry.queryMatches == "classname!=weapon");
+			CHECK(entry.queryMatches == "classname!=weapon (monster_gman)");
 		}
 
 		SUBCASE("do not match classname fail")

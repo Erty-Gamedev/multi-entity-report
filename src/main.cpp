@@ -252,7 +252,7 @@ int main(const int argc, char* argv[])
     {
         std::cout << (g_options.absoluteDir ? map.filename() : map).string() << ": [\n";
 
-        for (const auto& [index, flags, classname, targetname, key, value, queryMatches, matched] : entries)
+        for (const auto& [index, flags, classname, targetname, queryMatches, matched] : entries)
         {
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())
