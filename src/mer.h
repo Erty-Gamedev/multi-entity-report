@@ -9,16 +9,17 @@
 #include <memory>
 
 
+using Entity = std::unordered_map<std::string, std::string>;
+
 struct EntityEntry
 {
+	bool matched = false;
 	unsigned int index;
 	unsigned int flags = 0;
 	std::string classname, targetname;
 	std::string queryMatches;
-	bool matched = false;
+	Entity fullEnt;
 };
-
-using Entity = std::unordered_map<std::string, std::string>;
 
 
 class Query
@@ -73,6 +74,7 @@ struct Options
 	bool caseSensitive = false;
 	bool interactiveMode = false;
 	bool absoluteDir = false;
+	bool printFullEnt = false;
 	Query* firstQuery;
 	std::vector<std::string> mods;
 	std::filesystem::path gamePath;

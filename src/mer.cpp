@@ -47,9 +47,10 @@ void printUsage()
         << style(bold) << "OPTIONS\n" << style()
         << "  --case       -c      make matches case sensitive\n"
         << "  --help       -h      print this message and exit\n"
+        << "  --full       -f      print the full entitiy in the report\n"
         << "  --steamdir   -s      Steam or maps directory to use for this session\n"
-        << "  --version            print application version and exit\n"
-        << "  --verbose            enable verbose logging\n\n"
+        << "  --version    -V      print application version and exit\n"
+        << "  --verbose    -v      enable verbose logging\n\n"
 
         << style(italic) << "Example:\n" << style()
         << "> " << style(brightBlack) << "mer" << style() << " valve classname=monster_gman AND =argument\n"
@@ -250,10 +251,14 @@ void Bsp::parse()
             if (!matchEntry.matched)
                 continue;
 
+            matchEntry.targetname = entity.contains("targetname") ? entity.at("targetname") : "";
+
+            if (g_options.printFullEnt)
+                matchEntry.fullEnt = std::move(entity);
+
             if (!g_options.entries.contains(m_filepath))
                 g_options.entries.insert_or_assign(m_filepath, std::vector<EntityEntry>{});
 
-            matchEntry.targetname = entity.contains("targetname") ? entity.at("targetname") : "";
             g_options.entries.at(m_filepath).push_back(matchEntry);
             ++g_options.foundEntries;
         }

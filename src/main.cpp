@@ -21,7 +21,7 @@ static void handleArgs(const int argc, char* argv[])
     // Eager args
     for (int i = 1; i < argc; ++i)
     {
-        if (strcmp(argv[i], "--version") == 0)
+        if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-V") == 0)
         {
             std::cout << MER_NAME_VERSION << std::endl;
             exit(EXIT_SUCCESS);
@@ -50,6 +50,18 @@ static void handleArgs(const int argc, char* argv[])
             continue;
         }
 
+        if (strncmp(argv[i], "-v", 2) == 0)
+        {
+            char* c = argv[i] + 1;
+            for (; c; c++)
+            {
+                if (*c != 'v')
+                    break;
+                ++verbosity;
+            }
+            continue;
+        }
+
         if (strcmp(argv[i], "--steamdir") == 0 || strcmp(argv[i], "-s") == 0)
         {
             ++i;
@@ -68,6 +80,11 @@ static void handleArgs(const int argc, char* argv[])
             exit(EXIT_FAILURE);
         }
 
+        if (strcmp(argv[i], "--full") == 0 || strcmp(argv[i], "-f") == 0)
+        {
+            g_options.printFullEnt = true;
+            continue;
+        }
 
         if (currentQuery && strcmp(toLowerCase(argv[i]).c_str(), "or") == 0)
             continue;
@@ -236,7 +253,8 @@ int main(const int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    std::cout << "Number of matches found: " << g_options.foundEntries << '\n' << std::endl;
+    std::cout << "Number of matches found: " << g_options.foundEntries << '\n'
+        << "Checked " << g_options.globs.size() << " .bsp files\n" << std::endl;
 
 
     // Flatten to vector and sort our entries by map name
@@ -252,8 +270,18 @@ int main(const int argc, char* argv[])
     {
         std::cout << (g_options.absoluteDir ? map.filename() : map).string() << ": [\n";
 
-        for (const auto& [index, flags, classname, targetname, queryMatches, matched] : entries)
+        for (const auto& [matched, index, flags, classname, targetname, queryMatches, fullEnt] : entries)
         {
+            if (g_options.printFullEnt)
+            {
+                std::cout << "// Matched term(s): " << queryMatches << ":\n{\n";
+                for (const auto& [key, value] : fullEnt)
+                    std::cout << '"' << key << "\" \"" << value << "\"\n";
+
+                std::cout << "}\n";
+                continue;
+            }
+
             std::cout << "  " << classname << " (index " << index;
             if (!targetname.empty())
                 std::cout << ", targetname '" << targetname << "'";
